@@ -1,6 +1,8 @@
 extends Control
 
 signal GameWin
+# Emitted once per capture, while the victim still holds its real texture.
+signal Captured(victim: Node2D)
 # Emitted once a move animation has fully settled and input is unlocked again.
 signal MoveSettled
 
@@ -297,6 +299,7 @@ func _Commit(piece: Node2D, target: Control, victim: Node2D = null):
 	await flight.finished
 	var captured := is_instance_valid(victim)
 	if captured:
+		Captured.emit(victim)
 		victim.reparent(FX)
 		Juice.pop_out(victim)
 	_Drop(piece, target)
