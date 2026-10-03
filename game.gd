@@ -273,7 +273,7 @@ func _Commit(piece: Node2D, target: Control, victim: Node2D = null):
 	var from: Vector2 = piece.global_position
 	var landing := _CellCenter(target)
 	Effects.burst(from, DUST, 6, 110.0, 200.0, 60.0, 0.3)
-	Effects.shockwave(from, WAVE_LAUNCH, WAVE_LAUNCH_COLOR, 0.6)
+	# Effects.shockwave(from, WAVE_LAUNCH, WAVE_LAUNCH_COLOR, 0.6)
 	_Shake(0.22)
 	var flight := Juice.hop(piece, _Lift(piece), landing)
 	await flight.finished
