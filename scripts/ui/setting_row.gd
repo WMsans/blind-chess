@@ -37,12 +37,21 @@ func _ready() -> void:
 	_label.add_theme_color_override("font_color", UiMotion.CREAM)
 	add_child(_label)
 	resized.connect(_refresh)
+	# AnimatedButton switches processing off when it is not holding, which would
+	# also stop the direction poll; focus re-arms it.
+	focus_entered.connect(func(): set_process(true))
 	set_process(true)
 	_refresh()
 
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	# AnimatedButton switches processing off whenever it is not holding. The
+	# direction poll needs it back on while this row owns focus.
+	if not has_focus():
+		_dir = 0
+		return
+	set_process(true)
 	# Left/right are polled so a held key keeps stepping even if the release
 	# event lands on another control.
 	var d := 0
@@ -68,11 +77,25 @@ func _process(delta: float) -> void:
 		_step(_dir)
 
 
-## Swallow left/right so the viewport does not move focus off the row while the
-## player is adjusting a value.
-func _gui_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_left") or event.is_action_pressed("ui_right"):
-		accept_event()
+## Left/right adjust the value and must not move focus off the row. Handling
+## them in _input (before the viewport's focus navigation) and marking them
+## handled leaves BaseButton's own mouse handling intact.
+func _input(event: InputEvent) -> void:
+	if not has_focus() or not visible:
+		return
+	if event.is_action_pressed("ui_right"):
+		_press_dir(1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_left"):
+		_press_dir(-1)
+		get_viewport().set_input_as_handled()
+
+
+func _press_dir(dir: int) -> void:
+	_dir = dir
+	_dir_time = 0.0
+	_repeat_clock = 0.0
+	_step(dir)
 
 
 func set_value(v: int) -> void:

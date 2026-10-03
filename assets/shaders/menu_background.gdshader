@@ -46,7 +46,7 @@ void fragment() {
 	float MicroChaos = 3.5;
 	float NoiseOverlay = 4.0;
 
-	vec2 RENDERSIZE = 1.0 / (SCREEN_PIXEL_SIZE * 2.0);
+	vec2 RENDERSIZE = 1.0 / SCREEN_PIXEL_SIZE;
 	vec2 uv = (FRAGCOORD.xy - 0.5 * RENDERSIZE.xy) / RENDERSIZE.y;
 	float t = TIME * 0.42 * FlowSpeed * (speed / 0.35);
 

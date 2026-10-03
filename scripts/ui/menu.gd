@@ -51,7 +51,9 @@ func _entrance(buttons: Array) -> void:
 		i += 1
 	var wait: float = 0.14 + UiMotion.APPEAR_STAGGER * (buttons.size() - 1) + UiMotion.APPEAR_TIME
 	await get_tree().create_timer(wait).timeout
-	if not _leaving:
+	# A player can open settings before the entrance finishes; do not steal
+	# focus back to Play behind the open sheet.
+	if not _leaving and not SettingsPanel.visible:
 		buttons[0].grab_focus()
 
 
@@ -70,6 +72,8 @@ func _restage_buttons() -> void:
 		return
 	var i := 0
 	for b in Buttons.get_children():
+		b.focus_mode = Control.FOCUS_ALL
+		b.mouse_filter = Control.MOUSE_FILTER_STOP
 		b.appear(UiMotion.APPEAR_STAGGER * i)
 		i += 1
 	Buttons.get_child(0).grab_focus()
@@ -78,6 +82,10 @@ func _restage_buttons() -> void:
 func _dismiss_buttons(delay := 0.0) -> void:
 	var i := 0
 	for b in Buttons.get_children():
+		# A button that is animating out must not stay focusable or clickable,
+		# or ui_accept would fire it behind the settings panel.
+		b.focus_mode = Control.FOCUS_NONE
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.dismiss(delay + UiMotion.DISMISS_STAGGER * i)
 		i += 1
 

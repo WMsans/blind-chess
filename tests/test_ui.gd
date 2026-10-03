@@ -27,6 +27,8 @@ func _run() -> void:
 	await _test_setting_row()
 	await _test_promotion()
 	await _test_menu()
+	await _test_settings_input()
+	await _test_menu_focus()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -141,4 +143,44 @@ func _test_menu() -> void:
 	panel.set_value("Master Volume", 42)
 	menu.push_data_to_manager()
 	_check(root.get_node("Savemanager").get_setting("Master Volume") == 42, "window close persists live values")
+	menu.queue_free()
+
+func _test_settings_input() -> void:
+	print("settings_input")
+	var menu: Control = load("res://scenes/menu.tscn").instantiate()
+	root.add_child(menu)
+	await create_timer(0.8).timeout
+	var panel: Control = menu.get_node("SettingsPanel")
+	panel.open()
+	await create_timer(0.5).timeout
+	var row = panel.get_node("Rows/MasterVolume")
+	row.set_value(row.min_value)
+	row.grab_focus()
+	var before: int = row.value
+	_press_key(KEY_RIGHT, true)
+	await create_timer(UiMotion.HOLD_DELAY + UiMotion.REPEAT_INTERVAL * 3.0 + 0.25).timeout
+	_press_key(KEY_RIGHT, false)
+	await create_timer(0.1).timeout
+	_check(row.value >= before + 3, "holding ui_right repeats the step")
+	menu.queue_free()
+
+
+func _press_key(code: int, pressed: bool) -> void:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = code
+	ev.keycode = code
+	ev.pressed = pressed
+	Input.parse_input_event(ev)
+
+func _test_menu_focus() -> void:
+	print("menu_focus")
+	var menu: Control = load("res://scenes/menu.tscn").instantiate()
+	root.add_child(menu)
+	await create_timer(0.6).timeout
+	var play = menu.get_node("Buttons/Play")
+	play.grab_focus()
+	menu._on_settings()
+	await create_timer(0.4).timeout
+	_check(play.focus_mode == Control.FOCUS_NONE, "dismissed menu button cannot take focus")
+	_check(not play.has_focus(), "focus is not on a dismissed menu button")
 	menu.queue_free()

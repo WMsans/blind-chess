@@ -45,6 +45,7 @@ func open() -> void:
 		if row is Button:
 			row.appear(0.06 + UiMotion.APPEAR_STAGGER * i)
 			i += 1
+	Rows.get_node("MasterVolume").grab_focus()
 
 
 func close() -> void:
