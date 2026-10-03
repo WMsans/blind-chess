@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cm5p4epdmul84"]
 
-[ext_resource type="Script" uid="uid://b3qsh3qkw62a" path="res://game_darkener.gd" id="1_scq4l"]
+[ext_resource type="Script" uid="uid://b3qsh3qkw62a" path="res://scripts/ui/brightness.gd" id="1_scq4l"]
 
 [node name="Brightness" type="Node2D" unique_id=1600029225]
 script = ExtResource("1_scq4l")

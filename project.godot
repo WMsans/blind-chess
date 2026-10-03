@@ -14,7 +14,6 @@ config/name="Blind Chess"
 run/main_scene="uid://frlgcxc465gs"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
-<<<<<<<Updatedupstreamrun/main_scene="res://scenes/game.tscn"
 
 [autoload]
 
@@ -25,6 +24,10 @@ Brightness="*uid://cm5p4epdmul84"
 
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom="res://themes/blind_chess.tres"
 
 [input]
 
