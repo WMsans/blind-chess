@@ -23,6 +23,7 @@ func _check(condition: bool, message: String) -> void:
 func _run() -> void:
 	await _test_theme()
 	await _test_ui_motion()
+	await _test_animated_button()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -48,3 +49,24 @@ func _test_ui_motion() -> void:
 	await UiMotion.dismiss(c, Vector2(0, 40), 0.0).finished
 	_check(is_equal_approx(c.modulate.a, 0.0), "dismiss leaves it transparent")
 	c.queue_free()
+
+func _test_animated_button() -> void:
+	print("animated_button")
+	var b = preload("res://scripts/ui/animated_button.gd").new()
+	b.text = "Play"
+	b.size = Vector2(240, 64)
+	root.add_child(b)
+	await process_frame
+	var started := [false]
+	var released := [false]
+	b.hold_started.connect(func(): started[0] = true)
+	b.hold_released.connect(func(): released[0] = true)
+	b.button_down.emit()
+	await create_timer(0.5).timeout
+	_check(started[0], "hold_started fires while held")
+	_check(b.is_holding(), "hold state is on")
+	b.button_up.emit()
+	await create_timer(0.1).timeout
+	_check(released[0], "hold_released fires on release")
+	_check(not b.is_holding(), "hold state is off")
+	b.queue_free()

@@ -1,5 +1,4 @@
 extends RefCounted
-class_name UiMotion
 ## Shared tween recipes for the UI kit.
 ##
 ## Every helper is pure: hand it a Control, it kills that control's previous
