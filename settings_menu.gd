@@ -36,13 +36,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("cancel") and selected == 0:
-		var data = {
-			"Master Volume" : s.get("mvolume"),
-			"BGM Volume": s.get("bgmvolume"),
-			"SFX Volume": s.get("sfxvolume"),
-			"Brightness": s.get("brightness")
-		}
-		Savemanager.set_scene_data(scene_file_path,data)
+		Savemanager.set_setting("Master Volume", mvolume)
+		Savemanager.set_setting("BGM Volume", bgmvolume)
+		Savemanager.set_setting("SFX Volume", sfxvolume)
+		Savemanager.set_setting("Brightness", brightness)
 		find_parent("menu").set("in_settings",0)
 		find_parent("menu").set("selected",0)
 		down = 1;
