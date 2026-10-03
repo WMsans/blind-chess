@@ -1,0 +1,111 @@
+[gd_scene format=3 uid="uid://d0qyk6v20uief"]
+
+[ext_resource type="Script" uid="uid://dyqw4lpfqhgmb" path="res://scripts/board/generator.gd" id="1_ckrtr"]
+[ext_resource type="Script" uid="uid://dysg515hr11cc" path="res://scripts/board/game.gd" id="1_f1l42"]
+[ext_resource type="PackedScene" uid="uid://dl8ctpb4nx5b4" path="res://scenes/pieces/pawn.tscn" id="3_871tv"]
+[ext_resource type="PackedScene" uid="uid://cu208w2aj6qnh" path="res://scenes/pieces/bishop.tscn" id="4_f2vpi"]
+[ext_resource type="PackedScene" uid="uid://cl7imfd1umhvu" path="res://scenes/pieces/rook.tscn" id="5_lwy4i"]
+[ext_resource type="PackedScene" uid="uid://bgd6ldfcm8hie" path="res://scenes/pieces/knight.tscn" id="6_ta68t"]
+[ext_resource type="PackedScene" uid="uid://1sle88win6dm" path="res://scenes/pieces/queen.tscn" id="7_7creb"]
+[ext_resource type="PackedScene" uid="uid://yqfgmt234xui" path="res://scenes/pieces/king.tscn" id="8_vvr6q"]
+[ext_resource type="Script" uid="uid://bombmbttl3o7n" path="res://scripts/board/game_win.gd" id="9_ww6wk"]
+[ext_resource type="Script" uid="uid://be52gqnqmul8x" path="res://scripts/fx/effects.gd" id="10_fx"]
+
+[node name="Board" type="Control" unique_id=294561725]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+accessibility_name = "Root"
+accessibility_description = "The node that houses everything."
+script = ExtResource("1_f1l42")
+BoardPath = NodePath("Flow")
+
+[node name="Frame" type="Panel" parent="." unique_id=1037298874]
+layout_mode = 0
+mouse_filter = 2
+accessibility_name = "Frame"
+accessibility_description = "The slab the board sits on."
+
+[node name="Flow" type="FlowContainer" parent="." unique_id=1806371339]
+layout_mode = 0
+accessibility_name = "Flow"
+accessibility_description = "The game board"
+script = ExtResource("1_ckrtr")
+Pawn = ExtResource("3_871tv")
+Bishop = ExtResource("4_f2vpi")
+Rook = ExtResource("5_lwy4i")
+Knight = ExtResource("6_ta68t")
+Queen = ExtResource("7_7creb")
+King = ExtResource("8_vvr6q")
+
+[node name="FX" type="Node2D" parent="." unique_id=1358196]
+
+[node name="Effects" type="Node2D" parent="." unique_id=1904283651]
+script = ExtResource("10_fx")
+
+[node name="GameWin" type="Control" parent="." unique_id=73581294]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+accessibility_name = "Win"
+accessibility_description = "Node that houses a script."
+script = ExtResource("9_ww6wk")
+
+[node name="Promotion" type="Panel" parent="." unique_id=1204006618]
+visible = false
+layout_mode = 0
+offset_left = 531.0
+offset_top = 130.0
+offset_right = 731.0
+offset_bottom = 330.0
+accessibility_name = "Promotion"
+accessibility_description = "A panel that houses buttons for promoting."
+
+[node name="Rook" type="Button" parent="Promotion" unique_id=718945129]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 10.0
+offset_right = 55.0
+offset_bottom = 41.0
+accessibility_name = "Rook"
+accessibility_description = "Promote a pawn to a rook."
+text = "Rook"
+
+[node name="Bishop" type="Button" parent="Promotion" unique_id=1719234307]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 10.0
+offset_right = 115.0
+offset_bottom = 41.0
+accessibility_name = "Bishop"
+accessibility_description = "Promote a pawn to a bishop."
+text = "Bishop"
+
+[node name="Knight" type="Button" parent="Promotion" unique_id=1722773399]
+layout_mode = 0
+offset_left = 9.0
+offset_top = 50.0
+offset_right = 56.0
+offset_bottom = 81.0
+accessibility_name = "Knight"
+accessibility_description = "Promote a pawn to a knight."
+text = "Knight"
+
+[node name="Queen" type="Button" parent="Promotion" unique_id=86156771]
+layout_mode = 0
+offset_left = 79.0
+offset_top = 52.0
+offset_right = 140.0
+offset_bottom = 83.0
+accessibility_name = "Queen"
+accessibility_description = "Promote a pawn to a queen."
+text = "Queen"
+
+[connection signal="GameWin" from="." to="GameWin" method="_on_board_game_win"]
+[connection signal="SendLocation" from="Flow" to="." method="_on_flow_send_location"]
+[connection signal="HoverLocation" from="Flow" to="." method="_on_flow_hover"]
+[connection signal="pressed" from="Promotion/Rook" to="." method="FinalizePromotion" binds= ["Rook"]]
+[connection signal="pressed" from="Promotion/Bishop" to="." method="FinalizePromotion" binds= ["Bishop"]]
+[connection signal="pressed" from="Promotion/Knight" to="." method="FinalizePromotion" binds= ["Knight"]]
+[connection signal="pressed" from="Promotion/Queen" to="." method="FinalizePromotion" binds= ["Queen"]]

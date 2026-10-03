@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/tray.gd" id="1_tray"]
+
+[node name="Tray" type="Panel"]
+custom_minimum_size = Vector2(96, 440)
+script = ExtResource("1_tray")
+
+[node name="Flow" type="HFlowContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
