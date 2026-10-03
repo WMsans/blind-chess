@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c1kcvxp1ei4fw"
-path="res://.godot/imported/Chess.png-5aa5e1cd7f41db7e12bcda3ac0b5924e.ctex"
+uid="uid://cr1lku07l36wb"
+path="res://.godot/imported/WQueen.svg-e113d0374a3e4dbff4f9183a01e22424.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Chess.png"
-dest_files=["res://.godot/imported/Chess.png-5aa5e1cd7f41db7e12bcda3ac0b5924e.ctex"]
+source_file="res://assets/textures/pieces/WQueen.svg"
+dest_files=["res://.godot/imported/WQueen.svg-e113d0374a3e4dbff4f9183a01e22424.ctex"]
 
 [params]
 
@@ -38,3 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cla2mshxp0elx"
-path="res://.godot/imported/BQueen.svg-0f0716f66c779cdea1fabbd0a87d627a.ctex"
+uid="uid://ca8t2shoassp2"
+path="res://.godot/imported/BBishop.svg-5876b1da0aaa0e816b4abe42abe4b69d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ChessTextures/BQueen.svg"
-dest_files=["res://.godot/imported/BQueen.svg-0f0716f66c779cdea1fabbd0a87d627a.ctex"]
+source_file="res://assets/textures/pieces/BBishop.svg"
+dest_files=["res://.godot/imported/BBishop.svg-5876b1da0aaa0e816b4abe42abe4b69d.ctex"]
 
 [params]
 

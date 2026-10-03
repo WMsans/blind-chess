@@ -1,10 +1,10 @@
 extends SceneTree
 ## Headless check for the move-animation restructure:
-##   godot --headless --script res://test_chess.gd
+##   godot --headless --script res://tests/test_chess.gd
 ## Exercises the real tap handler and waits for MoveSettled, so it fails if the
 ## hop/land/commit sequencing stops putting pieces in the right cells.
 
-const Juice = preload("res://ChessScripts/juice.gd")
+const Juice = preload("res://scripts/fx/juice.gd")
 
 var _fails := 0
 
@@ -33,7 +33,7 @@ func _run() -> void:
 
 
 func _fresh() -> Control:
-	var board: Control = load("res://board.tscn").instantiate()
+	var board: Control = load("res://scenes/board.tscn").instantiate()
 	root.add_child(board)
 	return board
 
@@ -168,7 +168,7 @@ func _test_promotion() -> void:
 	var flow: Control = board.get_node("Flow")
 	flow.get_node("0-1").get_child(0).free()
 	flow.get_node("0-0").get_child(0).free()
-	var pawn = load("res://ChessScenes/pawn.tscn").instantiate()
+	var pawn = load("res://scenes/pieces/pawn.tscn").instantiate()
 	pawn.Spawned(0)
 	pawn.position = board.pos
 	flow.get_node("0-1").add_child(pawn)
@@ -190,8 +190,8 @@ func _test_fx() -> void:
 	var flow: Control = board.get_node("Flow")
 	var fx: Node2D = board.get_node("Effects")
 
-	_check(load("res://ChessShaders/outline.gdshader") != null, "outline shader loads")
-	_check(load("res://ChessShaders/shockwave.gdshader") != null, "shockwave shader loads")
+	_check(load("res://assets/shaders/outline.gdshader") != null, "outline shader loads")
+	_check(load("res://assets/shaders/shockwave.gdshader") != null, "shockwave shader loads")
 	_check(fx.get_child_count() == 0, "nothing on the effects layer at rest")
 
 	board._on_flow_send_location("0-6")

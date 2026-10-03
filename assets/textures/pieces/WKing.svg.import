@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bgeifkewhw83q"
-path="res://.godot/imported/WKing.svg-5baf29b7cc0647974c7427255174f754.ctex"
+path="res://.godot/imported/WKing.svg-a3d42bffe78f83dd0c66df989c36ee5f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ChessTextures/WKing.svg"
-dest_files=["res://.godot/imported/WKing.svg-5baf29b7cc0647974c7427255174f754.ctex"]
+source_file="res://assets/textures/pieces/WKing.svg"
+dest_files=["res://.godot/imported/WKing.svg-a3d42bffe78f83dd0c66df989c36ee5f.ctex"]
 
 [params]
 

@@ -4,12 +4,12 @@ signal GameWin
 # Emitted once a move animation has fully settled and input is unlocked again.
 signal MoveSettled
 
-const Juice = preload("res://ChessScripts/juice.gd")
+const Juice = preload("res://scripts/fx/juice.gd")
 const PROMOTION_SCENES := {
-	"Bishop": preload("res://ChessScenes/bishop.tscn"),
-	"Queen": preload("res://ChessScenes/queen.tscn"),
-	"Rook": preload("res://ChessScenes/rook.tscn"),
-	"Knight": preload("res://ChessScenes/knight.tscn"),
+	"Bishop": preload("res://scenes/pieces/bishop.tscn"),
+	"Queen": preload("res://scenes/pieces/queen.tscn"),
+	"Rook": preload("res://scenes/pieces/rook.tscn"),
+	"Knight": preload("res://scenes/pieces/knight.tscn"),
 }
 
 const MARKER_DOT := Color(0.13, 0.18, 0.13, 0.32)

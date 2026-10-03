@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://qisaumos7b53"
-path="res://.godot/imported/WRook.svg-39b447f94ad3647c8bc4cff26af8747b.ctex"
+uid="uid://dnp45xyp0eesa"
+path="res://.godot/imported/WKnight.svg-b8d181034ff7d8f5ca2691a53e8f8a09.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ChessTextures/WRook.svg"
-dest_files=["res://.godot/imported/WRook.svg-39b447f94ad3647c8bc4cff26af8747b.ctex"]
+source_file="res://assets/textures/pieces/WKnight.svg"
+dest_files=["res://.godot/imported/WKnight.svg-b8d181034ff7d8f5ca2691a53e8f8a09.ctex"]
 
 [params]
 

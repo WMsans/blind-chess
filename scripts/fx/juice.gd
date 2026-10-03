@@ -27,7 +27,7 @@ const SELECT_TILT := 0.13
 const TILT_TIME := 0.5
 const SWAY := 0.025
 
-const OUTLINE_SHADER := preload("res://ChessShaders/outline.gdshader")
+const OUTLINE_SHADER := preload("res://assets/shaders/outline.gdshader")
 const OUTLINE_COLOR := Color("#ffd257")
 const OUTLINE_PX := 3.5
 

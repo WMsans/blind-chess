@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ca8t2shoassp2"
-path="res://.godot/imported/BBishop.svg-32bac95d5ec3d4b5dc48860fe70db198.ctex"
+uid="uid://2an2oqh0ks1y"
+path="res://.godot/imported/BRook.svg-70005024a139c392a2bc82d3805f82a7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ChessTextures/BBishop.svg"
-dest_files=["res://.godot/imported/BBishop.svg-32bac95d5ec3d4b5dc48860fe70db198.ctex"]
+source_file="res://assets/textures/pieces/BRook.svg"
+dest_files=["res://.godot/imported/BRook.svg-70005024a139c392a2bc82d3805f82a7.ctex"]
 
 [params]
 

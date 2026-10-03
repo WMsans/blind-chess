@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjneg3fh7mu2e"
-path="res://.godot/imported/BKnight.svg-ab901432cba73437ff587bc1c6ca9974.ctex"
+uid="uid://bal1cx2x7hk7l"
+path="res://.godot/imported/WBishop.svg-418003491d03ad1a0ec012d2355c7dd2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ChessTextures/BKnight.svg"
-dest_files=["res://.godot/imported/BKnight.svg-ab901432cba73437ff587bc1c6ca9974.ctex"]
+source_file="res://assets/textures/pieces/WBishop.svg"
+dest_files=["res://.godot/imported/WBishop.svg-418003491d03ad1a0ec012d2355c7dd2.ctex"]
 
 [params]
 

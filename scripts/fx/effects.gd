@@ -5,7 +5,7 @@ extends Node2D
 ## and a burst frees itself when its particles run out, so the move path never
 ## awaits an effect - the board just unlocks on its own timer as before.
 
-const SHOCKWAVE_SHADER := preload("res://ChessShaders/shockwave.gdshader")
+const SHOCKWAVE_SHADER := preload("res://assets/shaders/shockwave.gdshader")
 
 # The ring expands past the screen corner while its push eases off to nothing.
 # Tune force here: it is a fraction of the screen, so 0.02 is ~23px on a 1152

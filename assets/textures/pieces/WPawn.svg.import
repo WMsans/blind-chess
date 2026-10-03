@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://1sql4pmy32c8"
-path="res://.godot/imported/BPawn.svg-89a4238a9f63fa634c3ae4588a7dfe4b.ctex"
+uid="uid://dl5dp47xg34sb"
+path="res://.godot/imported/WPawn.svg-99c0f5cd1e00957f9c07106784fb1331.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ChessTextures/BPawn.svg"
-dest_files=["res://.godot/imported/BPawn.svg-89a4238a9f63fa634c3ae4588a7dfe4b.ctex"]
+source_file="res://assets/textures/pieces/WPawn.svg"
+dest_files=["res://.godot/imported/WPawn.svg-99c0f5cd1e00957f9c07106784fb1331.ctex"]
 
 [params]
 
