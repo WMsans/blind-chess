@@ -180,6 +180,7 @@ func _test_promotion() -> void:
 	var queen := flow.get_node("0-0").get_child(0)
 	_check(queen.name == "Queen" && queen.PieceColor == 0, "pawn became a white queen")
 	_check(flow.get_node("0-0").get_child_count() == 1, "only the new piece is on the square")
+	await board.get_node("Promotion").closed
 	_check(not board.get_node("Promotion").visible, "promotion panel closed")
 	await _drop(board)
 

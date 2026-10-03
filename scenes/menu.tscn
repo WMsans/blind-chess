@@ -1,0 +1,180 @@
+[gd_scene load_steps=7 format=3 uid="uid://frlgcxc465gs"]
+
+[ext_resource type="Shader" path="res://assets/shaders/menu_background.gdshader" id="1_bg"]
+[ext_resource type="Script" path="res://scripts/ui/menu.gd" id="2_menu"]
+[ext_resource type="Script" path="res://scripts/ui/animated_button.gd" id="3_btn"]
+[ext_resource type="Script" path="res://scripts/ui/setting_row.gd" id="4_row"]
+[ext_resource type="Script" path="res://scripts/ui/settings_menu.gd" id="5_settings"]
+
+[sub_resource type="ShaderMaterial" id="SM_bg"]
+shader = ExtResource("1_bg")
+shader_parameter/speed = 0.35
+shader_parameter/tint_bg = Vector3(0.0627, 0.0824, 0.0549)
+shader_parameter/tint_line = Vector3(0.3098, 0.3647, 0.2667)
+shader_parameter/tint_glow = Vector3(1.0, 0.8431, 0.4157)
+shader_parameter/glow = 0.6
+shader_parameter/vignette = 0.8
+shader_parameter/intensity = 0.0
+
+[node name="Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("SM_bg")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchor_right = 1.0
+offset_top = 64.0
+offset_bottom = 200.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0.415686, 1)
+theme_override_font_sizes/font_size = 96
+text = "BLIND CHESS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Buttons" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Play" type="Button" parent="Buttons"]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 330.0
+offset_right = 400.0
+offset_bottom = 394.0
+focus_neighbor_bottom = NodePath("../Settings")
+accessibility_name = "Play"
+text = "PLAY"
+script = ExtResource("3_btn")
+
+[node name="Settings" type="Button" parent="Buttons"]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 410.0
+offset_right = 400.0
+offset_bottom = 474.0
+focus_neighbor_top = NodePath("../Play")
+focus_neighbor_bottom = NodePath("../Quit")
+accessibility_name = "Settings"
+text = "SETTINGS"
+script = ExtResource("3_btn")
+
+[node name="Quit" type="Button" parent="Buttons"]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 490.0
+offset_right = 400.0
+offset_bottom = 554.0
+focus_neighbor_top = NodePath("../Settings")
+accessibility_name = "Quit"
+text = "QUIT"
+script = ExtResource("3_btn")
+
+[node name="SettingsPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_settings")
+
+[node name="Dim" type="ColorRect" parent="SettingsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Rows" type="Control" parent="SettingsPanel"]
+layout_mode = 0
+offset_left = 196.0
+offset_top = 308.0
+offset_right = 956.0
+offset_bottom = 608.0
+mouse_filter = 2
+
+[node name="Plate" type="Panel" parent="SettingsPanel/Rows"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MasterVolume" type="Button" parent="SettingsPanel/Rows"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 736.0
+offset_bottom = 68.0
+script = ExtResource("4_row")
+setting_name = "Master Volume"
+label_text = "Master Volume"
+
+[node name="BGMVolume" type="Button" parent="SettingsPanel/Rows"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 76.0
+offset_right = 736.0
+offset_bottom = 124.0
+script = ExtResource("4_row")
+setting_name = "BGM Volume"
+label_text = "BGM Volume"
+
+[node name="SFXVolume" type="Button" parent="SettingsPanel/Rows"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 132.0
+offset_right = 736.0
+offset_bottom = 180.0
+script = ExtResource("4_row")
+setting_name = "SFX Volume"
+label_text = "SFX Volume"
+
+[node name="Brightness" type="Button" parent="SettingsPanel/Rows"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 188.0
+offset_right = 736.0
+offset_bottom = 236.0
+script = ExtResource("4_row")
+setting_name = "Brightness"
+label_text = "Brightness"
+min_value = 20
+
+[node name="Back" type="Button" parent="SettingsPanel/Rows"]
+layout_mode = 0
+offset_left = 300.0
+offset_top = 252.0
+offset_right = 460.0
+offset_bottom = 294.0
+accessibility_name = "Back"
+text = "BACK"
+script = ExtResource("3_btn")

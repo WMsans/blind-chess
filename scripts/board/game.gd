@@ -85,7 +85,7 @@ var _ShakeClock := 0.0
 
 
 func _ready():
-	_StylePromotion()
+	get_node("Promotion").chosen.connect(FinalizePromotion)
 
 
 func _process(delta: float) -> void:
@@ -425,32 +425,8 @@ func _Drop(piece: Node2D, target: Control):
 
 
 # --- Promotion panel -----------------------------------------------------------
-
-func _StylePromotion():
-	var panel := get_node("Promotion") as Panel
-	panel.add_theme_stylebox_override("panel", _Flat(Color("#232a20"), 12, Color("#4f5d44")))
-	for button in panel.get_children():
-		button.add_theme_stylebox_override("normal", _Flat(Color("#39452f"), 8))
-		button.add_theme_stylebox_override("hover", _Flat(Color("#4b5a3c"), 8))
-		button.add_theme_stylebox_override("pressed", _Flat(Color("#2b3423"), 8))
-		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		button.add_theme_color_override("font_color", Color("#f0f2e6"))
-
-
-func _Flat(color: Color, radius: int, border := Color(0, 0, 0, 0)) -> StyleBoxFlat:
-	var box := StyleBoxFlat.new()
-	box.bg_color = color
-	box.set_corner_radius_all(radius)
-	if border.a > 0.0:
-		box.set_border_width_all(3)
-		box.border_color = border
-	return box
-
-
-func _ShowPromotion():
-	var panel := get_node("Promotion") as Control
-	panel.visible = true
-	Juice.panel_in(panel)
+# The picker is its own scene (scenes/promotion.tscn); the board only opens it
+# and reacts to the chosen piece.
 
 func UpdateGame(cell):
 	SelectedNode = ""
@@ -507,9 +483,9 @@ func GetMovableAreas():
 func PawnPromotion(Piece):
 	# This is for going from the bottom to the top, also known as the white pawns.
 	if IsNull(LocationX + "-" + str(LocationYInt - 1)) && Piece.PieceColor == 0:
-		_ShowPromotion()
+		get_node("Promotion").open(Piece.PieceColor)
 	elif IsNull(LocationX + "-" + str(LocationYInt + 1)) && Piece.PieceColor == 1:
-		_ShowPromotion()
+		get_node("Promotion").open(Piece.PieceColor)
 
 
 func FinalizePromotion(Selection):
@@ -524,7 +500,7 @@ func FinalizePromotion(Selection):
 	cell.add_child(new_piece)
 	Juice.spawn(new_piece)
 	_PromotionFX(cell)
-	get_node("Promotion").visible = false
+	get_node("Promotion").close()
 
 
 func _PromotionFX(cell: Control) -> void:
