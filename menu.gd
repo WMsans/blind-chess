@@ -13,7 +13,18 @@ func _ready() -> void:
 		s.bgmvolume = saved_data.get("BGM Volume",false)
 		s.sfxvolume = saved_data.get("SFX Volume",false)
 		s.brightness = saved_data.get("Brightness",false)
-	
+	else:
+		s.mvolume = 50;
+		s.bgmvolume = 80;
+		s.sfxvolume = 65;
+		s.brightness = 100;
+		var local_data = {
+		"Master Volume" : s.mvolume,
+		"BGM Volume": s.bgmvolume,
+		"SFX Volume": s.sfxvolume,
+		"Brightness": s.brightness
+		}
+		Savemanager.set_scene_data(scene_id, local_data)
 		# (Optional) Apply loaded data to your level nodes here
 		# e.g., if chest_opened: $Chest.open()
 

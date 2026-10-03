@@ -32,8 +32,7 @@ func load_data() -> Dictionary:
 			save_file.close();
 
 		#push_error("Corrupted Data")
-	
-	return default_dictionary;
+	return default_dictionary
 	
 func _notification(what: int) -> void:
 	# This notification is sent when the player clicks the 'X' button or closes the window

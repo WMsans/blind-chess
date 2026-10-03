@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b0jodrljsowwq"
+path="res://.godot/imported/1. Twilight Reverie (Save Select).mp3-1dc0fa3dc042d94e746c989c9736ae07.mp3str"
+
+[deps]
+
+source_file="res://1. Twilight Reverie (Save Select).mp3"
+dest_files=["res://.godot/imported/1. Twilight Reverie (Save Select).mp3-1dc0fa3dc042d94e746c989c9736ae07.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

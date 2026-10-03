@@ -156,5 +156,5 @@ func _process(delta: float) -> void:
 		var tween = create_tween();
 		tween.tween_property(self,"global_position",Vector2(position.x,700),0.65)
 		down = 0;
-	Brightness.alpha = float(brightness);
+	#Brightness.alpha = float(brightness);
 	
