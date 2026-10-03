@@ -6,6 +6,9 @@ extends RefCounted
 ## timing and overshoot tuning lives in the constants below - tune here only.
 
 const META := "ui_motion"
+## Target alpha of an in-flight appear/dismiss fade. Transform-only animations
+## (hover, press, reject) kill the fade's tween, so _kill() lands it here.
+const FADE_META := META + "_fade_to"
 
 # Palette - mirrors themes/blind_chess.tres so code can tint to match.
 const BG_DEEP := Color("#232a20")
@@ -58,6 +61,13 @@ static func _kill(node: Object) -> void:
 		if ctrl.has_meta(META + "_rest_mod"):
 			ctrl.modulate = ctrl.get_meta(META + "_rest_mod")
 			ctrl.remove_meta(META + "_rest_mod")
+		# A hover/press/reject tween may interrupt an in-flight fade. Land it on
+		# its target so the control is never stranded half-transparent.
+		if ctrl.has_meta(FADE_META):
+			var mod := ctrl.modulate
+			mod.a = ctrl.get_meta(FADE_META)
+			ctrl.modulate = mod
+			ctrl.remove_meta(FADE_META)
 
 
 static func _track(node: Object, tween: Tween) -> Tween:
@@ -141,6 +151,7 @@ static func appear(ctrl: Control, from_offset := Vector2.ZERO, delay := 0.0) -> 
 	ctrl.position = home + from_offset
 	ctrl.scale = APPEAR_SCALE
 	ctrl.modulate.a = 0.0
+	ctrl.set_meta(FADE_META, 1.0)
 	var t := _track(ctrl, ctrl.create_tween())
 	t.tween_interval(delay)
 	t.tween_property(ctrl, "position", home, APPEAR_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -152,6 +163,7 @@ static func appear(ctrl: Control, from_offset := Vector2.ZERO, delay := 0.0) -> 
 static func dismiss(ctrl: Control, to_offset := Vector2.ZERO, delay := 0.0) -> Tween:
 	_kill(ctrl)
 	var home := _home(ctrl)
+	ctrl.set_meta(FADE_META, 0.0)
 	var t := _track(ctrl, ctrl.create_tween())
 	t.tween_interval(delay)
 	t.tween_property(ctrl, "position", home + to_offset, DISMISS_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)

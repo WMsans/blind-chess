@@ -29,6 +29,8 @@ func _run() -> void:
 	await _test_menu()
 	await _test_settings_input()
 	await _test_menu_focus()
+	await _test_menu_restage()
+	await _test_appear_hover_race()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -184,3 +186,31 @@ func _test_menu_focus() -> void:
 	_check(play.focus_mode == Control.FOCUS_NONE, "dismissed menu button cannot take focus")
 	_check(not play.has_focus(), "focus is not on a dismissed menu button")
 	menu.queue_free()
+
+func _test_menu_restage() -> void:
+	print("menu_restage")
+	var menu: Control = load("res://scenes/menu.tscn").instantiate()
+	root.add_child(menu)
+	await create_timer(0.8).timeout
+	menu._on_settings()
+	await create_timer(0.4).timeout
+	menu.get_node("SettingsPanel").close()
+	# Sheet exit is 0.1 + 0.24s, then the buttons fade back in.
+	await create_timer(1.0).timeout
+	for b in menu.get_node("Buttons").get_children():
+		_check(is_equal_approx(b.modulate.a, 1.0), "menu button %s is opaque after settings" % b.name)
+	menu.queue_free()
+
+func _test_appear_hover_race() -> void:
+	print("appear_hover_race")
+	var b = preload("res://scripts/ui/animated_button.gd").new()
+	b.text = "Play"
+	b.size = Vector2(240, 64)
+	root.add_child(b)
+	await process_frame
+	b.appear(0.0)
+	# A hover/focus event can land while the fade-in is still running.
+	b.mouse_entered.emit()
+	await create_timer(0.5).timeout
+	_check(is_equal_approx(b.modulate.a, 1.0), "button stays opaque when hovered mid-appear")
+	b.queue_free()

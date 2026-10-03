@@ -70,13 +70,19 @@ func _start_title_bob(home: Vector2) -> void:
 func _restage_buttons() -> void:
 	if _leaving:
 		return
+	var buttons := Buttons.get_children()
 	var i := 0
-	for b in Buttons.get_children():
+	for b in buttons:
 		b.focus_mode = Control.FOCUS_ALL
 		b.mouse_filter = Control.MOUSE_FILTER_STOP
 		b.appear(UiMotion.APPEAR_STAGGER * i)
 		i += 1
-	Buttons.get_child(0).grab_focus()
+	# Hand focus back only once the fade-in has landed: grabbing it now fires
+	# the button's hover tween, which kills the in-flight appear and strands its
+	# alpha at zero, leaving the button invisible.
+	await get_tree().create_timer(UiMotion.APPEAR_TIME + UiMotion.APPEAR_STAGGER * (buttons.size() - 1)).timeout
+	if not _leaving and not SettingsPanel.visible:
+		buttons[0].grab_focus()
 
 
 func _dismiss_buttons(delay := 0.0) -> void:
