@@ -7,6 +7,12 @@ extends RefCounted
 
 const SELECT_SCALE := Vector2(1.18, 1.18)
 
+# Hovering a card in your own hand: a quick lift and a touch of scale.
+const HOVER_LIFT := 7.0
+const HOVER_SCALE := Vector2(1.07, 1.07)
+const HOVER_IN_TIME := 0.16
+const HOVER_OUT_TIME := 0.2
+
 const ANTICIPATE := 0.07
 const HOP_UP := 0.15
 const HOP_DOWN := 0.17
@@ -63,6 +69,37 @@ static func _settle_rest(node: CanvasItem, reset_rotation := true) -> void:
 		mat.set_shader_parameter("outline_size", 0.0)
 
 
+# Hover bounces always return to the piece's real resting spot, never to
+# wherever an interrupted tween left it, or fast cursor jitter creeps it upward.
+static func _home(piece: Object) -> Vector2:
+	if not piece.has_meta("juice_home"):
+		piece.set_meta("juice_home", piece.get("position"))
+	var home: Vector2 = piece.get_meta("juice_home")
+	return home
+
+
+## Cursor entered a piece of the active colour: nudge it up like a Balatro card.
+static func hover_in(piece: Node2D) -> Tween:
+	_kill(piece)
+	_settle_rest(piece)
+	var home := _home(piece)
+	var t := _track(piece, piece.create_tween())
+	t.set_parallel(true)
+	t.tween_property(piece, "position", home - Vector2(0, HOVER_LIFT), HOVER_IN_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(piece, "scale", HOVER_SCALE, HOVER_IN_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	return t
+
+
+## Cursor left: ease back down to the resting spot and normal size.
+static func hover_out(piece: Node2D) -> Tween:
+	_kill(piece)
+	var t := _track(piece, piece.create_tween())
+	t.set_parallel(true)
+	t.tween_property(piece, "position", _home(piece), HOVER_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t.tween_property(piece, "scale", Vector2.ONE, HOVER_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	return t
+
+
 ## The piece the player just picked up: squash, spring up to SELECT_SCALE, then
 ## settle into a slow random tilt that sways while it is held.
 static func select(piece: CanvasItem) -> Tween:
@@ -79,7 +116,7 @@ static func select(piece: CanvasItem) -> Tween:
 
 
 ## Let a piece go: ease the tilt and outline out slowly, and shrink back.
-static func release(piece: CanvasItem) -> Tween:
+static func release(piece: Node2D) -> Tween:
 	var outline := _outline_size(piece)
 	_kill(piece)
 	_settle_rest(piece, false)
@@ -87,6 +124,10 @@ static func release(piece: CanvasItem) -> Tween:
 	var t := _track(piece, piece.create_tween())
 	t.tween_property(piece, "scale", SQUASH_DESCEND, 0.06)
 	t.tween_property(piece, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# The piece may still be raised from a hover when it is let go (the exit
+	# event is skipped while it is held), so release puts it back down too.
+	var drop := _track(piece, piece.create_tween())
+	drop.tween_property(piece, "position", _home(piece), HOVER_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	var spin := _track(piece, piece.create_tween())
 	spin.tween_property(piece, "rotation", 0.0, TILT_TIME * 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	return t

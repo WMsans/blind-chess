@@ -27,6 +27,7 @@ func _run() -> void:
 	await _test_en_passant()
 	await _test_castle()
 	await _test_promotion()
+	await _test_hover()
 	await _test_fx()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
@@ -180,6 +181,41 @@ func _test_promotion() -> void:
 	_check(queen.name == "Queen" && queen.PieceColor == 0, "pawn became a white queen")
 	_check(flow.get_node("0-0").get_child_count() == 1, "only the new piece is on the square")
 	_check(not board.get_node("Promotion").visible, "promotion panel closed")
+	await _drop(board)
+
+
+func _test_hover() -> void:
+	print("hover")
+	var board := _fresh()
+	await process_frame
+	var flow: Control = board.get_node("Flow")
+	var white: Node2D = flow.get_node("0-6").get_child(0)
+	var black: Node2D = flow.get_node("0-1").get_child(0)
+	var home: Vector2 = board.pos
+
+	# Emitting the button's own signals is exactly what the generator wires up,
+	# so this fails if the square name is read before set_name() has run.
+	flow.get_node("0-6").mouse_entered.emit()
+	await create_timer(0.35).timeout
+	_check(white.position.y < home.y, "own piece lifts on hover")
+	_check(white.scale.is_equal_approx(Juice.HOVER_SCALE), "own piece grows on hover")
+
+	flow.get_node("0-6").mouse_exited.emit()
+	await create_timer(0.35).timeout
+	_check(white.position.is_equal_approx(home), "piece drops back when the cursor leaves")
+	_check(white.scale.is_equal_approx(Vector2.ONE), "piece returns to normal size")
+
+	flow.get_node("0-1").mouse_entered.emit()
+	await create_timer(0.35).timeout
+	_check(black.position.is_equal_approx(home), "enemy piece ignores the hover")
+
+	board._on_flow_send_location("0-6")
+	await create_timer(0.4).timeout
+	flow.get_node("0-6").mouse_entered.emit()
+	await create_timer(0.2).timeout
+	var mat := white.material as ShaderMaterial
+	_check(white.scale.is_equal_approx(Juice.SELECT_SCALE), "hovering the held piece does not shrink it")
+	_check(mat != null && float(mat.get_shader_parameter("outline_size")) > 0.1, "hovering the held piece keeps the outline lit")
 	await _drop(board)
 
 

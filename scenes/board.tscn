@@ -104,6 +104,7 @@ text = "Queen"
 
 [connection signal="GameWin" from="." to="GameWin" method="_on_board_game_win"]
 [connection signal="SendLocation" from="Flow" to="." method="_on_flow_send_location"]
+[connection signal="HoverLocation" from="Flow" to="." method="_on_flow_hover"]
 [connection signal="pressed" from="Promotion/Rook" to="." method="FinalizePromotion" binds= ["Rook"]]
 [connection signal="pressed" from="Promotion/Bishop" to="." method="FinalizePromotion" binds= ["Bishop"]]
 [connection signal="pressed" from="Promotion/Knight" to="." method="FinalizePromotion" binds= ["Knight"]]

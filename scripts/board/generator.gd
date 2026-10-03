@@ -15,6 +15,7 @@ const FRAME_COLOR := Color("#2b3226")
 const TILE_RADIUS := 8
 
 signal SendLocation(Location: String)
+signal HoverLocation(Location: String, entered: bool)
 
 @export var Pawn: PackedScene
 @export var Bishop: PackedScene
@@ -38,6 +39,8 @@ func _ready():
 			temp.set_custom_minimum_size(Vector2(TileXSize, TileYSize))
 			temp.connect("pressed", func():
 				SendLocation.emit(temp.name))
+			temp.mouse_entered.connect(func(): HoverLocation.emit(temp.name, true))
+			temp.mouse_exited.connect(func(): HoverLocation.emit(temp.name, false))
 			temp.set_name(str(NumberX) + "-" + str(NumberY))
 			temp.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			_StyleCell(temp, (NumberX + NumberY) % 2 == 0)

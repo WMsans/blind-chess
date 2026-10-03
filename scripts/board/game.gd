@@ -142,6 +142,24 @@ func _on_flow_send_location(Location: String):
 		_Reject(cell)
 
 
+# Cursor over a square: bounce the piece on it, but only if it is one of the
+# active colour's. Enemy pieces do not react and the held piece has its own
+# lift - killing its tweens here would strand the sway and outline mid-flight.
+func _on_flow_hover(Location: String, entered: bool) -> void:
+	if Busy:
+		return
+	var cell := Flow.get_node_or_null(Location)
+	if cell == null || cell.get_child_count() != 1:
+		return
+	var piece: Node2D = cell.get_child(0)
+	if piece.PieceColor != Turn || piece == SelectedPiece:
+		return
+	if entered:
+		Juice.hover_in(piece)
+	else:
+		Juice.hover_out(piece)
+
+
 # --- Selection -----------------------------------------------------------------
 
 func _Select(Location: String, cell: Control):
