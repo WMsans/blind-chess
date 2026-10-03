@@ -16,6 +16,22 @@ const MARKER_DOT := Color(0.13, 0.18, 0.13, 0.32)
 const MARKER_RING := Color(0.13, 0.18, 0.13, 0.55)
 const DENY_COLOR := Color(0.95, 0.28, 0.28, 0.9)
 
+# Shockwave push, in screen-UV units. Bigger number = harder warp.
+const WAVE_SELECT := 0.006
+const WAVE_LAUNCH := 0.014
+const WAVE_LAND := 0.022
+const WAVE_CAPTURE := 0.03
+const WAVE_WHITE := Color("#fff4dc")
+const WAVE_LAUNCH_COLOR := Color("#cfe8ff")
+const SPARK := Color("#ffd76a")
+const DUST := Color("#d9d2bb")
+
+# Screen shake is trauma-based: hits add trauma, it drains, and the offset is
+# trauma squared so light taps stay subtle and heavy ones hit hard.
+const SHAKE_MAX := 13.0
+const SHAKE_DECAY := 2.4
+const SHAKE_FREQ := 32.0
+
 # Selected node is the button pressed before the one you just pressed.
 var SelectedNode = ""
 # The sprite currently selected, so it can be animated when released.
@@ -39,6 +55,7 @@ var LocationYInt: int
 @export_node_path("FlowContainer") var BoardPath
 @onready var Flow = get_node(BoardPath)
 @onready var FX: Node2D = get_node("FX")
+@onready var Effects: Node2D = get_node("Effects")
 
 @onready var pos: Vector2 = Vector2(Flow.TileXSize / 2, Flow.TileYSize / 2)
 # Areas where the player can move
@@ -46,9 +63,30 @@ var Areas: PackedStringArray
 # this is seperate the Areas for special circumstances, like castling.
 var SpecialArea: PackedStringArray
 
+# Shake lives on the root Board node, which nothing else writes - the generator
+# centres Flow, not Board - so _Center() on resize never fights it.
+var Trauma := 0.0
+var _ShakeClock := 0.0
+
 
 func _ready():
 	_StylePromotion()
+
+
+func _process(delta: float) -> void:
+	if Trauma <= 0.0:
+		return
+	_ShakeClock += delta
+	Trauma = maxf(Trauma - SHAKE_DECAY * delta, 0.0)
+	var amp := Trauma * Trauma * SHAKE_MAX
+	if Trauma <= 0.0:
+		position = Vector2.ZERO
+	else:
+		position = Vector2(sin(_ShakeClock * SHAKE_FREQ), cos(_ShakeClock * SHAKE_FREQ * 1.37)) * amp
+
+
+func _Shake(trauma: float) -> void:
+	Trauma = minf(Trauma + trauma, 1.0)
 
 func _on_flow_send_location(Location: String):
 	# Don't update ANYTHING if you still need to promote!
@@ -113,6 +151,8 @@ func _Select(Location: String, cell: Control):
 	SelectedPiece = cell.get_child(0)
 	Juice.select(SelectedPiece)
 	Juice.tap(cell)
+	Effects.shockwave(_CellCenter(cell), WAVE_SELECT, WAVE_LAUNCH_COLOR, 0.35)
+	_Shake(0.1)
 	GetMovableAreas()
 	_ShowMarkers()
 
@@ -230,14 +270,28 @@ func _DoEnPassant(victim_cell: Control):
 
 func _Commit(piece: Node2D, target: Control, victim: Node2D = null):
 	Busy = true
-	var flight := Juice.hop(piece, _Lift(piece), _CellCenter(target))
+	var from: Vector2 = piece.global_position
+	var landing := _CellCenter(target)
+	Effects.burst(from, DUST, 6, 110.0, 200.0, 60.0, 0.3)
+	Effects.shockwave(from, WAVE_LAUNCH, WAVE_LAUNCH_COLOR, 0.6)
+	_Shake(0.22)
+	var flight := Juice.hop(piece, _Lift(piece), landing)
 	await flight.finished
-	if is_instance_valid(victim):
+	var captured := is_instance_valid(victim)
+	if captured:
 		victim.reparent(FX)
 		Juice.pop_out(victim)
 	_Drop(piece, target)
 	UpdateGame(target)
 	Juice.impact(piece)
+	Effects.burst(landing, SPARK, 14, 300.0)
+	if captured:
+		Effects.burst(landing, WAVE_WHITE, 24, 360.0)
+		Effects.shockwave(landing, WAVE_CAPTURE, WAVE_WHITE, 1.0)
+		_Shake(1.0)
+	else:
+		Effects.shockwave(landing, WAVE_LAND, WAVE_WHITE, 0.9)
+		_Shake(0.7)
 	# A plain timer, not the tween: a promotion can free the piece mid-settle and
 	# a tween bound to it would never resume this await.
 	await get_tree().create_timer(Juice.SETTLE_TIME).timeout
@@ -247,6 +301,12 @@ func _Commit(piece: Node2D, target: Control, victim: Node2D = null):
 
 func _CommitPair(king: Node2D, king_target: Control, rook: Node2D, rook_target: Control):
 	Busy = true
+	var king_from: Vector2 = king.global_position
+	var rook_from: Vector2 = rook.global_position
+	Effects.burst(king_from, DUST, 5, 110.0, 200.0, 60.0, 0.3)
+	Effects.burst(rook_from, DUST, 5, 110.0, 200.0, 60.0, 0.3)
+	Effects.shockwave(king_from, WAVE_LAUNCH, WAVE_LAUNCH_COLOR, 0.6)
+	_Shake(0.25)
 	var king_flight := Juice.hop(king, _Lift(king), _CellCenter(king_target))
 	var rook_flight := Juice.hop(rook, _Lift(rook), _CellCenter(rook_target))
 	await rook_flight.finished
@@ -260,6 +320,9 @@ func _CommitPair(king: Node2D, king_target: Control, rook: Node2D, rook_target: 
 	UpdateGame(king_target)
 	Juice.impact(king)
 	Juice.impact(rook)
+	Effects.burst(_CellCenter(king_target), SPARK, 16, 300.0)
+	Effects.shockwave(_CellCenter(king_target), WAVE_LAND, WAVE_WHITE, 0.9)
+	_Shake(0.7)
 	await get_tree().create_timer(Juice.SETTLE_TIME).timeout
 	Busy = false
 	MoveSettled.emit()
@@ -378,7 +441,15 @@ func FinalizePromotion(Selection):
 	new_piece.position = pos
 	cell.add_child(new_piece)
 	Juice.spawn(new_piece)
+	_PromotionFX(cell)
 	get_node("Promotion").visible = false
+
+
+func _PromotionFX(cell: Control) -> void:
+	var center := _CellCenter(cell)
+	Effects.burst(center, SPARK, 20, 320.0)
+	Effects.shockwave(center, WAVE_LAND, WAVE_WHITE, 0.9)
+	_Shake(0.6)
 
 func GetPawn(Piece):
 	# This is for going from the bottom to the top, also known as the white pawns.

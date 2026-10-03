@@ -27,6 +27,7 @@ func _run() -> void:
 	await _test_en_passant()
 	await _test_castle()
 	await _test_promotion()
+	await _test_fx()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -90,7 +91,9 @@ func _test_illegal() -> void:
 	var flow: Control = board.get_node("Flow")
 
 	board._on_flow_send_location("0-6")
+	var rest_fx: int = board.get_node("Effects").get_child_count()
 	board._on_flow_send_location("1-5")
+	_check(board.get_node("Effects").get_child_count() == rest_fx, "illegal tap emits nothing")
 	await create_timer(0.05).timeout
 	_check(flow.get_node("0-6").get_child_count() == 1, "piece stayed put")
 	_check(board.SelectedNode == "0-6", "selection survives the rejection")
@@ -177,4 +180,35 @@ func _test_promotion() -> void:
 	_check(queen.name == "Queen" && queen.PieceColor == 0, "pawn became a white queen")
 	_check(flow.get_node("0-0").get_child_count() == 1, "only the new piece is on the square")
 	_check(not board.get_node("Promotion").visible, "promotion panel closed")
+	await _drop(board)
+
+
+func _test_fx() -> void:
+	print("effects")
+	var board := _fresh()
+	await process_frame
+	var flow: Control = board.get_node("Flow")
+	var fx: Node2D = board.get_node("Effects")
+
+	_check(load("res://ChessShaders/outline.gdshader") != null, "outline shader loads")
+	_check(load("res://ChessShaders/shockwave.gdshader") != null, "shockwave shader loads")
+	_check(fx.get_child_count() == 0, "nothing on the effects layer at rest")
+
+	board._on_flow_send_location("0-6")
+	_check(fx.get_child_count() > 0, "selecting fires a shockwave")
+	await create_timer(0.7).timeout
+	var pawn: Node2D = flow.get_node("0-6").get_child(0)
+	_check(absf(pawn.rotation) > 0.001, "selected piece holds a random tilt")
+	_check(pawn.material is ShaderMaterial, "selected piece gets the outline material")
+	var mat := pawn.material as ShaderMaterial
+	_check(float(mat.get_shader_parameter("outline_size")) > 0.1, "outline is lit while held")
+
+	board._on_flow_send_location("0-4")
+	_check(board.Trauma > 0.0, "the launch kicks the screen shake")
+	await board.MoveSettled
+	_check(fx.get_child_count() > 0, "landing FX still playing when the move settles")
+	# Every effect is one-shot, so the layer has to drain on its own.
+	await create_timer(1.2).timeout
+	_check(fx.get_child_count() == 0, "effects layer drains after the move")
+	_check(board.position.is_equal_approx(Vector2.ZERO), "shake returns to zero")
 	await _drop(board)

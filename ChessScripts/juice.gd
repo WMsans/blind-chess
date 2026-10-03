@@ -21,6 +21,16 @@ const IMPACT_SQUASH := Vector2(1.4, 0.64)
 const REJECT_COLOR := Color(1.0, 0.35, 0.35)
 const REJECT_TILT := 0.2
 
+# A picked-up piece is a card lifted out of a Balatro hand: it eases into a
+# random tilt over TILT_TIME, then sways lazily around that angle.
+const SELECT_TILT := 0.13
+const TILT_TIME := 0.5
+const SWAY := 0.025
+
+const OUTLINE_SHADER := preload("res://ChessShaders/outline.gdshader")
+const OUTLINE_COLOR := Color("#ffd257")
+const OUTLINE_PX := 3.5
+
 
 static func _kill(node: Object) -> void:
 	if not is_instance_valid(node):
@@ -38,33 +48,104 @@ static func _track(node: Object, tween: Tween) -> Tween:
 
 # A tween that got killed part-way (a rejection interrupted by the next tap)
 # would leave the piece tilted and tinted, so putting it back is a hard reset.
-static func _settle_rest(node: CanvasItem) -> void:
+static func _settle_rest(node: CanvasItem, reset_rotation := true) -> void:
 	if not is_instance_valid(node):
 		return
 	if node.has_meta("juice_rest"):
 		node.modulate = node.get_meta("juice_rest")
 		node.remove_meta("juice_rest")
-	node.rotation = 0.0
+	if reset_rotation:
+		node.rotation = 0.0
+	# A tween killed mid-flight can strand the outline at whatever size it had
+	# reached, so settling always clears it. Select paints it back on after.
+	var mat := node.material as ShaderMaterial
+	if mat != null and mat.shader == OUTLINE_SHADER:
+		mat.set_shader_parameter("outline_size", 0.0)
 
 
-## The piece the player just picked up: squash, then spring up to SELECT_SCALE.
+## The piece the player just picked up: squash, spring up to SELECT_SCALE, then
+## settle into a slow random tilt that sways while it is held.
 static func select(piece: CanvasItem) -> Tween:
 	_kill(piece)
 	_settle_rest(piece)
 	var t := _track(piece, piece.create_tween())
 	t.tween_property(piece, "scale", SQUASH_SELECT, 0.08)
 	t.tween_property(piece, "scale", SELECT_SCALE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var tilt := _track(piece, piece.create_tween())
+	tilt.tween_property(piece, "rotation", randf_range(-SELECT_TILT, SELECT_TILT), TILT_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tilt.tween_callback(_sway.bind(piece))
+	_outline_on(piece)
 	return t
 
 
-## Let a piece go back to its resting size.
+## Let a piece go: ease the tilt and outline out slowly, and shrink back.
 static func release(piece: CanvasItem) -> Tween:
+	var outline := _outline_size(piece)
 	_kill(piece)
-	_settle_rest(piece)
+	_settle_rest(piece, false)
+	_outline_off(piece, outline)
 	var t := _track(piece, piece.create_tween())
 	t.tween_property(piece, "scale", SQUASH_DESCEND, 0.06)
 	t.tween_property(piece, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var spin := _track(piece, piece.create_tween())
+	spin.tween_property(piece, "rotation", 0.0, TILT_TIME * 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	return t
+
+
+# --- Selection outline ---------------------------------------------------------
+
+static func _outline_material(piece: CanvasItem) -> ShaderMaterial:
+	var mat := piece.material as ShaderMaterial
+	if mat == null or mat.shader != OUTLINE_SHADER:
+		mat = ShaderMaterial.new()
+		mat.shader = OUTLINE_SHADER
+		mat.set_shader_parameter("outline_color", OUTLINE_COLOR)
+		mat.set_shader_parameter("outline_size", 0.0)
+		piece.material = mat
+	return mat
+
+
+static func _outline_size(piece: CanvasItem) -> float:
+	var mat := piece.material as ShaderMaterial
+	if mat == null or mat.shader != OUTLINE_SHADER:
+		return 0.0
+	return float(mat.get_shader_parameter("outline_size"))
+
+
+static func _outline_on(piece: CanvasItem) -> void:
+	var mat := _outline_material(piece)
+	mat.set_shader_parameter("outline_size", 0.0)
+	var t := _track(piece, piece.create_tween())
+	t.tween_property(mat, "shader_parameter/outline_size", OUTLINE_PX, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_callback(_outline_pulse.bind(piece))
+
+
+static func _outline_off(piece: CanvasItem, from: float) -> void:
+	if from <= 0.0:
+		return
+	var mat := _outline_material(piece)
+	mat.set_shader_parameter("outline_size", from)
+	var t := _track(piece, piece.create_tween())
+	t.tween_property(mat, "shader_parameter/outline_size", 0.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+static func _outline_pulse(piece: CanvasItem) -> void:
+	if not is_instance_valid(piece):
+		return
+	var mat := _outline_material(piece)
+	var t := _track(piece, piece.create_tween().set_loops())
+	t.tween_property(mat, "shader_parameter/outline_size", OUTLINE_PX * 1.3, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(mat, "shader_parameter/outline_size", OUTLINE_PX * 0.6, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+static func _sway(piece: CanvasItem) -> void:
+	if not is_instance_valid(piece):
+		return
+	var base: float = piece.rotation
+	var t := _track(piece, piece.create_tween().set_loops())
+	t.tween_property(piece, "rotation", base + SWAY, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(piece, "rotation", base - SWAY, 2.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(piece, "rotation", base, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 ## Anticipate, arc over the board, stretch on the way down. Await .finished.
