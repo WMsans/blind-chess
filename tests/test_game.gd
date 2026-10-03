@@ -71,6 +71,17 @@ func _run() -> void:
 	await create_timer(1.0).timeout
 	_check(veil.is_covered(), "hand-off covers the board")
 	_check(absf(flow.rotation - PI) < 0.01, "board rotated 180 degrees for black")
+	# The rotation must not tip the pieces over with the board: every piece is
+	# still upright on screen while its square is counter-rotated.
+	var upright := 0
+	var on_board := 0
+	for cell in flow.get_children():
+		if cell.get_child_count() != 1:
+			continue
+		on_board += 1
+		if absf(cell.get_child(0).global_rotation) < 0.01:
+			upright += 1
+	_check(on_board > 0 and upright == on_board, "pieces stay upright while the board is rotated")
 	var white_now_hidden := 0
 	for cell in flow.get_children():
 		if cell.get_child_count() == 1 and cell.get_child(0).PieceColor == 0 and fog_is(cell.get_child(0)):
