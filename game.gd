@@ -1,9 +1,29 @@
 extends Control
 
 signal GameWin
+# Emitted once a move animation has fully settled and input is unlocked again.
+signal MoveSettled
+
+const Juice = preload("res://ChessScripts/juice.gd")
+const PROMOTION_SCENES := {
+	"Bishop": preload("res://ChessScenes/bishop.tscn"),
+	"Queen": preload("res://ChessScenes/queen.tscn"),
+	"Rook": preload("res://ChessScenes/rook.tscn"),
+	"Knight": preload("res://ChessScenes/knight.tscn"),
+}
+
+const MARKER_DOT := Color(0.13, 0.18, 0.13, 0.32)
+const MARKER_RING := Color(0.13, 0.18, 0.13, 0.55)
+const DENY_COLOR := Color(0.95, 0.28, 0.28, 0.9)
 
 # Selected node is the button pressed before the one you just pressed.
 var SelectedNode = ""
+# The sprite currently selected, so it can be animated when released.
+var SelectedPiece: Node2D = null
+# Move markers live in FX so board cells only ever hold a single piece.
+var Markers: Array[Control] = []
+# True while a move animation plays: board input is ignored until it settles.
+var Busy := false
 # If you don't have a good solution, do your promotions with another variable~
 var SavedNode = ""
 var Turn = 0
@@ -18,22 +38,32 @@ var LocationYInt: int
 # This is the board buttons.
 @export_node_path("FlowContainer") var BoardPath
 @onready var Flow = get_node(BoardPath)
+@onready var FX: Node2D = get_node("FX")
 
-@onready var pos: Vector2 = Vector2(self.get_child(0).TileXSize / 2, self.get_child(0).TileYSize / 2)
+@onready var pos: Vector2 = Vector2(Flow.TileXSize / 2, Flow.TileYSize / 2)
 # Areas where the player can move
 var Areas: PackedStringArray
 # this is seperate the Areas for special circumstances, like castling.
 var SpecialArea: PackedStringArray
 
+
+func _ready():
+	_StylePromotion()
+
 func _on_flow_send_location(Location: String):
 	# Don't update ANYTHING if you still need to promote!
 	if get_node("Promotion").visible == true:
 		return
-	
-	# variables for later
-	var number = 0
-	var cell = Flow.get_node(Location)
+	# Nothing gets through while a piece is still in the air.
+	if Busy:
+		return
+
+	var cell = Flow.get_node_or_null(Location)
+	if cell == null:
+		return
+
 	# This is to try and grab the X and Y coordinates from the board
+	var number = 0
 	LocationX = ""
 	LocationY = ""
 	while Location.substr(number, 1) != "-":
@@ -42,59 +72,240 @@ func _on_flow_send_location(Location: String):
 	LocationY = Location.substr(number + 1)
 	LocationXInt = int(LocationX)
 	LocationYInt = int(LocationY)
-	# Now... we need to figure out how to select the pieces. If there is a valid move, do stuff.
-	# If we re-select, just go to that other piece
-	if SelectedNode == "" && cell.get_child_count() != 0 && cell.get_child(0).PieceColor == Turn:
-		SelectedNode = Location
-		GetMovableAreas()
-	# Castling
-	elif SelectedNode != "" && cell.get_child_count() != 0 && cell.get_child(0).PieceColor == Turn && cell.get_child(0).name == "Rook":
-		for i in Areas:
-			if i == cell.name:
-				var king = Flow.get_node(SelectedNode).get_child(0)
-				var rook = cell.get_child(0)
-				# Using a seperate array because Areas wouldn't be really consistant...
-				king.reparent(Flow.get_node(SpecialArea[1]))
-				rook.reparent(Flow.get_node(SpecialArea[0]))
-				king.position = pos
-				rook.position = pos
-				# We have to get the parent because it will break lmao.
-				UpdateGame(cell)
-	# En Passant
-	elif SelectedNode != "" && cell.get_child_count() != 0 && cell.get_child(0).PieceColor != Turn && cell.get_child(0).name == "Pawn" && SpecialArea.size() != 0 && SpecialArea[0] == cell.name && cell.get_child(0).EnPassant == true:
-		for i in SpecialArea:
-			if i == cell.name:
-				var pawn = Flow.get_node(SelectedNode).get_child(0)
-				cell.get_child(0).free()
-				pawn.reparent(Flow.get_node(SpecialArea[1]))
-				pawn.position = pos
-				UpdateGame(cell)
-	# Re-select
-	elif SelectedNode != "" && cell.get_child_count() != 0 && cell.get_child(0).PieceColor == Turn:
-		SelectedNode = Location
-		GetMovableAreas()
-	# Taking over a piece
-	elif SelectedNode != "" && cell.get_child_count() != 0 && cell.get_child(0).PieceColor != Turn:
-		for i in Areas:
-			if i == cell.name:
-				var Piece = Flow.get_node(SelectedNode).get_child(0)
-				# Win conditions
-				if cell.get_child(0).name == "King":
-					GameWin.emit()
-				cell.get_child(0).free()
-				SavedNode = Location
-				Piece.reparent(cell)
-				Piece.position = pos
-				UpdateGame(cell)
-	# Moving a piece
-	elif SelectedNode != "" && cell.get_child_count() == 0:
-		for i in Areas:
-			if i == cell.name:
-				var Piece = Flow.get_node(SelectedNode).get_child(0)
-				SavedNode = Location
-				Piece.reparent(cell)
-				Piece.position = pos
-				UpdateGame(cell)
+
+	var occupied: bool = cell.get_child_count() != 0
+	var mine: bool = occupied && cell.get_child(0).PieceColor == Turn
+
+	if SelectedNode == "":
+		if mine:
+			_Select(Location, cell)
+		else:
+			_Reject(cell)
+		return
+
+	var en_passant_target := false
+	if not mine && occupied && SpecialArea.size() == 2 && SpecialArea[0] == cell.name:
+		en_passant_target = cell.get_child(0).name == "Pawn" && cell.get_child(0).EnPassant == true
+
+	if mine && cell.get_child(0).name == "Rook" && Areas.has(cell.name):
+		_DoCastle(cell)
+	elif en_passant_target:
+		_DoEnPassant(cell)
+	elif mine:
+		_Select(Location, cell)
+	elif occupied:
+		if Areas.has(cell.name):
+			_DoCapture(cell)
+		else:
+			_Reject(cell)
+	elif Areas.has(cell.name):
+		_DoMove(cell)
+	else:
+		_Reject(cell)
+
+
+# --- Selection -----------------------------------------------------------------
+
+func _Select(Location: String, cell: Control):
+	if is_instance_valid(SelectedPiece):
+		Juice.release(SelectedPiece)
+	SelectedNode = Location
+	SelectedPiece = cell.get_child(0)
+	Juice.select(SelectedPiece)
+	Juice.tap(cell)
+	GetMovableAreas()
+	_ShowMarkers()
+
+
+func _ReleaseSelection(except: Node2D = null):
+	_ClearMarkers()
+	if is_instance_valid(SelectedPiece) && SelectedPiece != except:
+		Juice.release(SelectedPiece)
+	SelectedPiece = null
+	SelectedNode = ""
+
+
+# --- Feedback ------------------------------------------------------------------
+
+func _Reject(cell: Control):
+	Juice.tap(cell)
+	if is_instance_valid(SelectedPiece):
+		Juice.reject(SelectedPiece)
+	Juice.flash_out(_MakeMarker(cell, false, DENY_COLOR))
+
+
+func _CellCenter(cell: Control) -> Vector2:
+	return cell.global_position + cell.size / 2.0
+
+
+func _MakeMarker(cell: Control, filled: bool, color: Color) -> Control:
+	var tile: float = Flow.TileXSize
+	var marker := Panel.new()
+	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var box := StyleBoxFlat.new()
+	if filled:
+		marker.size = Vector2(tile * 0.36, tile * 0.36)
+		box.bg_color = color
+	else:
+		marker.size = Vector2(tile * 0.92, tile * 0.92)
+		box.bg_color = Color(0, 0, 0, 0)
+		box.set_border_width_all(4)
+		box.border_color = color
+	box.set_corner_radius_all(int(marker.size.x / 2.0))
+	marker.add_theme_stylebox_override("panel", box)
+	FX.add_child(marker)
+	marker.global_position = _CellCenter(cell) - marker.size / 2.0
+	return marker
+
+
+func _ShowMarkers():
+	_ClearMarkers()
+	for name in Areas:
+		_AddMarker(name, false)
+	# Castling and en passant land on squares that aren't in Areas.
+	if not is_instance_valid(SelectedPiece) || SpecialArea.size() != 2:
+		return
+	if SelectedPiece.name == "King":
+		_AddMarker(SpecialArea[0], false)
+		_AddMarker(SpecialArea[1], false)
+	elif SelectedPiece.name == "Pawn":
+		_AddMarker(SpecialArea[1], false)
+
+
+func _AddMarker(Location: String, force_dot: bool):
+	var cell := Flow.get_node_or_null(Location)
+	if cell == null:
+		return
+	var filled: bool = force_dot || cell.get_child_count() == 0
+	var marker := _MakeMarker(cell, filled, MARKER_DOT if filled else MARKER_RING)
+	Markers.append(marker)
+	Juice.marker_in(marker)
+
+
+func _ClearMarkers():
+	for marker in Markers:
+		if is_instance_valid(marker):
+			marker.queue_free()
+	Markers.clear()
+
+
+# --- Move execution ------------------------------------------------------------
+# Every move hops through FX and only lands in its cell as the impact beat
+# starts, so UpdateGame always sees the destination in its final state.
+
+func _DoMove(cell: Control):
+	var piece = Flow.get_node(SelectedNode).get_child(0)
+	SavedNode = str(cell.name)
+	_ReleaseSelection(piece)
+	_Commit(piece, cell)
+
+
+func _DoCapture(cell: Control):
+	var piece = Flow.get_node(SelectedNode).get_child(0)
+	var victim = cell.get_child(0)
+	if victim.name == "King":
+		GameWin.emit()
+	SavedNode = str(cell.name)
+	_ReleaseSelection(piece)
+	_Commit(piece, cell, victim)
+
+
+func _DoCastle(rook_cell: Control):
+	var king = Flow.get_node(SelectedNode).get_child(0)
+	var rook = rook_cell.get_child(0)
+	var king_target := Flow.get_node(SpecialArea[1])
+	var rook_target := Flow.get_node(SpecialArea[0])
+	_ReleaseSelection(king)
+	_CommitPair(king, king_target, rook, rook_target)
+
+
+func _DoEnPassant(victim_cell: Control):
+	var pawn = Flow.get_node(SelectedNode).get_child(0)
+	var victim = victim_cell.get_child(0)
+	var target := Flow.get_node(SpecialArea[1])
+	SavedNode = str(target.name)
+	_ReleaseSelection(pawn)
+	_Commit(pawn, target, victim)
+
+
+func _Commit(piece: Node2D, target: Control, victim: Node2D = null):
+	Busy = true
+	var flight := Juice.hop(piece, _Lift(piece), _CellCenter(target))
+	await flight.finished
+	if is_instance_valid(victim):
+		victim.reparent(FX)
+		Juice.pop_out(victim)
+	_Drop(piece, target)
+	UpdateGame(target)
+	Juice.impact(piece)
+	# A plain timer, not the tween: a promotion can free the piece mid-settle and
+	# a tween bound to it would never resume this await.
+	await get_tree().create_timer(Juice.SETTLE_TIME).timeout
+	Busy = false
+	MoveSettled.emit()
+
+
+func _CommitPair(king: Node2D, king_target: Control, rook: Node2D, rook_target: Control):
+	Busy = true
+	var king_flight := Juice.hop(king, _Lift(king), _CellCenter(king_target))
+	var rook_flight := Juice.hop(rook, _Lift(rook), _CellCenter(rook_target))
+	await rook_flight.finished
+	# The king's hop may already have finished this frame - awaiting a signal
+	# that already fired would hang forever.
+	if king_flight.is_running():
+		await king_flight.finished
+	_Drop(king, king_target)
+	_Drop(rook, rook_target)
+	rook.Castling = false
+	UpdateGame(king_target)
+	Juice.impact(king)
+	Juice.impact(rook)
+	await get_tree().create_timer(Juice.SETTLE_TIME).timeout
+	Busy = false
+	MoveSettled.emit()
+
+
+# Move a piece into the FX layer without it visibly moving a pixel.
+func _Lift(piece: Node2D) -> Vector2:
+	var from: Vector2 = piece.global_position
+	piece.reparent(FX)
+	piece.global_position = from
+	return from
+
+
+func _Drop(piece: Node2D, target: Control):
+	piece.reparent(target)
+	piece.global_position = _CellCenter(target)
+	piece.rotation = 0.0
+
+
+# --- Promotion panel -----------------------------------------------------------
+
+func _StylePromotion():
+	var panel := get_node("Promotion") as Panel
+	panel.add_theme_stylebox_override("panel", _Flat(Color("#232a20"), 12, Color("#4f5d44")))
+	for button in panel.get_children():
+		button.add_theme_stylebox_override("normal", _Flat(Color("#39452f"), 8))
+		button.add_theme_stylebox_override("hover", _Flat(Color("#4b5a3c"), 8))
+		button.add_theme_stylebox_override("pressed", _Flat(Color("#2b3423"), 8))
+		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		button.add_theme_color_override("font_color", Color("#f0f2e6"))
+
+
+func _Flat(color: Color, radius: int, border := Color(0, 0, 0, 0)) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.set_corner_radius_all(radius)
+	if border.a > 0.0:
+		box.set_border_width_all(3)
+		box.border_color = border
+	return box
+
+
+func _ShowPromotion():
+	var panel := get_node("Promotion") as Control
+	panel.visible = true
+	Juice.panel_in(panel)
 
 func UpdateGame(cell):
 	SelectedNode = ""
@@ -151,51 +362,22 @@ func GetMovableAreas():
 func PawnPromotion(Piece):
 	# This is for going from the bottom to the top, also known as the white pawns.
 	if IsNull(LocationX + "-" + str(LocationYInt - 1)) && Piece.PieceColor == 0:
-		get_node("Promotion").visible = true
+		_ShowPromotion()
 	elif IsNull(LocationX + "-" + str(LocationYInt + 1)) && Piece.PieceColor == 1:
-		get_node("Promotion").visible = true
+		_ShowPromotion()
 
-# TODO: Make this less crap
+
 func FinalizePromotion(Selection):
-	var Piece = Flow.get_node(SavedNode).get_child(0)
-	var NewPiece
-	if Selection == "Bishop":
-		var thing = ResourceLoader.load("res://ChessScenes/bishop.tscn")
-		NewPiece = thing.instantiate()
-		if Piece.PieceColor == 0:
-			NewPiece.Spawned(0)
-		else:
-			NewPiece.Spawned(1)
-		NewPiece.position = pos
-		Flow.get_node(SavedNode).add_child(NewPiece)
-	elif Selection == "Queen":
-		var thing = ResourceLoader.load("res://ChessScenes/queen.tscn")
-		NewPiece = thing.instantiate()
-		if Piece.PieceColor == 0:
-			NewPiece.Spawned(0)
-		else:
-			NewPiece.Spawned(1)
-		NewPiece.position = pos
-		Flow.get_node(SavedNode).add_child(NewPiece)
-	elif Selection == "Rook":
-		var thing = ResourceLoader.load("res://ChessScenes/rook.tscn")
-		NewPiece = thing.instantiate()
-		if Piece.PieceColor == 0:
-			NewPiece.Spawned(0)
-		else:
-			NewPiece.Spawned(1)
-		NewPiece.position = pos
-		Flow.get_node(SavedNode).add_child(NewPiece)
-	elif Selection == "Knight":
-		var thing = ResourceLoader.load("res://ChessScenes/knight.tscn")
-		NewPiece = thing.instantiate()
-		if Piece.PieceColor == 0:
-			NewPiece.Spawned(0)
-		else:
-			NewPiece.Spawned(1)
-		NewPiece.position = pos
-		Flow.get_node(SavedNode).add_child(NewPiece)
-	Piece.free()
+	var cell := Flow.get_node(SavedNode)
+	var pawn = cell.get_child(0)
+	var color: int = pawn.PieceColor
+	# The pawn has to leave before the replacement arrives: cells hold one piece.
+	pawn.free()
+	var new_piece = PROMOTION_SCENES[Selection].instantiate()
+	new_piece.Spawned(color)
+	new_piece.position = pos
+	cell.add_child(new_piece)
+	Juice.spawn(new_piece)
 	get_node("Promotion").visible = false
 
 func GetPawn(Piece):
@@ -212,11 +394,11 @@ func GetPawn(Piece):
 			Areas.append(str(LocationXInt + 1) + "-" + str(LocationYInt - 1))
 		# En passant
 		if not IsNull(str(LocationXInt - 1) + "-" + LocationY) && not IsNull(str(LocationXInt - 1) + "-" + str(LocationYInt - 1)):
-			if Flow.get_node(str(LocationXInt - 1) + "-" + LocationY).get_child_count() == 1 && Flow.get_node(str(LocationXInt - 1) + "-" + str(LocationYInt - 1)).get_child_count() != 1:
+			if _IsEnPassantVictim(str(LocationXInt - 1) + "-" + LocationY) && Flow.get_node(str(LocationXInt - 1) + "-" + str(LocationYInt - 1)).get_child_count() != 1:
 				SpecialArea.append(str(LocationXInt - 1) + "-" + LocationY)
 				SpecialArea.append(str(LocationXInt - 1) + "-" + str(LocationYInt - 1))
 		if not IsNull(str(LocationXInt + 1) + "-" + LocationY) && not IsNull(str(LocationXInt + 1) + "-" + str(LocationYInt - 1)):
-			if Flow.get_node(str(LocationXInt + 1) + "-" + LocationY).get_child_count() == 1 && Flow.get_node(str(LocationXInt + 1) + "-" + str(LocationYInt - 1)).get_child_count() != 1:
+			if _IsEnPassantVictim(str(LocationXInt + 1) + "-" + LocationY) && Flow.get_node(str(LocationXInt + 1) + "-" + str(LocationYInt - 1)).get_child_count() != 1:
 				SpecialArea.append(str(LocationXInt + 1) + "-" + LocationY)
 				SpecialArea.append(str(LocationXInt + 1) + "-" + str(LocationYInt - 1))
 	# Black pawns
@@ -232,13 +414,24 @@ func GetPawn(Piece):
 			Areas.append(str(LocationXInt + 1) + "-" + str(LocationYInt + 1))
 		# En passant
 		if not IsNull(str(LocationXInt - 1) + "-" + LocationY) && not IsNull(str(LocationXInt - 1) + "-" + str(LocationYInt + 1)):
-			if Flow.get_node(str(LocationXInt - 1) + "-" + LocationY).get_child_count() == 1 && Flow.get_node(str(LocationXInt - 1) + "-" + str(LocationYInt + 1)).get_child_count() != 1:
+			if _IsEnPassantVictim(str(LocationXInt - 1) + "-" + LocationY) && Flow.get_node(str(LocationXInt - 1) + "-" + str(LocationYInt + 1)).get_child_count() != 1:
 				SpecialArea.append(str(LocationXInt - 1) + "-" + LocationY)
 				SpecialArea.append(str(LocationXInt - 1) + "-" + str(LocationYInt + 1))
 		if not IsNull(str(LocationXInt + 1) + "-" + LocationY) && not IsNull(str(LocationXInt + 1) + "-" + str(LocationYInt + 1)):
-			if Flow.get_node(str(LocationXInt + 1) + "-" + LocationY).get_child_count() == 1 && Flow.get_node(str(LocationXInt + 1) + "-" + str(LocationYInt+ 1)).get_child_count() != 1:
+			if _IsEnPassantVictim(str(LocationXInt + 1) + "-" + LocationY) && Flow.get_node(str(LocationXInt + 1) + "-" + str(LocationYInt+ 1)).get_child_count() != 1:
 				SpecialArea.append(str(LocationXInt + 1) + "-" + LocationY)
 				SpecialArea.append(str(LocationXInt + 1) + "-" + str(LocationYInt + 1))
+
+# The pawn beside us only counts for en passant if it is an enemy pawn that
+# just double-stepped - without the colour/flag check SpecialArea fills up with
+# squares that are not en passant targets at all.
+func _IsEnPassantVictim(Location: String) -> bool:
+	var cell := Flow.get_node_or_null(Location)
+	if cell == null || cell.get_child_count() != 1:
+		return false
+	var neighbor = cell.get_child(0)
+	return neighbor.name == "Pawn" && neighbor.EnPassant == true
+
 
 func GetAround(Piece):
 	# Single Rows

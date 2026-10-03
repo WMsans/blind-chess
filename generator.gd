@@ -8,6 +8,12 @@ extends FlowContainer
 
 @export var PlayRegularGame: bool = true
 
+# Board look
+const LIGHT_SQUARE := Color("#ebecd0")
+const DARK_SQUARE := Color("#779556")
+const FRAME_COLOR := Color("#2b3226")
+const TILE_RADIUS := 8
+
 signal SendLocation(Location: String)
 
 @export var Pawn: PackedScene
@@ -33,12 +39,54 @@ func _ready():
 			temp.connect("pressed", func():
 				SendLocation.emit(temp.name))
 			temp.set_name(str(NumberX) + "-" + str(NumberY))
+			temp.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			_StyleCell(temp, (NumberX + NumberY) % 2 == 0)
 			add_child(temp)
 			NumberX += 1
 		NumberY += 1
 		NumberX = 0
+	_Center()
+	get_viewport().size_changed.connect(_Center)
 	if PlayRegularGame == true:
 		RegularGame()
+
+
+# Keep the board in the middle of the window, with the slab under it.
+func _Center() -> void:
+	var view := get_viewport_rect().size
+	position = ((view - size) / 2.0).floor()
+	_SizeFrame()
+
+
+# Checkerboard squares with a hover lift and a press dip.
+func _StyleCell(cell: Button, dark: bool) -> void:
+	var base := DARK_SQUARE if dark else LIGHT_SQUARE
+	cell.add_theme_stylebox_override("normal", _Box(base))
+	cell.add_theme_stylebox_override("hover", _Box(base.lightened(0.14)))
+	cell.add_theme_stylebox_override("pressed", _Box(base.darkened(0.12)))
+	cell.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+
+func _Box(color: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.set_corner_radius_all(TILE_RADIUS)
+	return box
+
+
+# The dark slab the grid sits on. The panel lives in board.tscn behind Flow,
+# so this only has to size and paint it.
+func _SizeFrame() -> void:
+	var frame := get_parent().get_node_or_null("Frame") as Panel
+	if frame == null:
+		return
+	var box := StyleBoxFlat.new()
+	box.bg_color = FRAME_COLOR
+	box.set_corner_radius_all(14)
+	frame.add_theme_stylebox_override("panel", box)
+	frame.position = position - Vector2(9, 9)
+	frame.size = size + Vector2(18, 18)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 # 1 = black
 # 0 = white
