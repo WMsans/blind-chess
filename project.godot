@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Blind Chess"
-run/main_scene="uid://bwh2pemwsn2y5"
+run/main_scene="uid://cm5p4epdmul84"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 <<<<<<<Updatedupstreamrun/main_scene="res://scenes/game.tscn"
@@ -19,7 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Savemanager="*uid://ctm35y1q28j61"
-Brightness="*uid://bwbjsddi0xt4o"
+Brightness="*uid://cm5p4epdmul84"
 
 [display]
 
