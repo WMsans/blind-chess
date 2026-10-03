@@ -18,6 +18,7 @@ const TEX_SIZE := 256
 
 var _factor := 0.0
 var _busy := false
+var _armed := false
 var _mat: ShaderMaterial
 
 
@@ -34,16 +35,26 @@ func _ready() -> void:
 
 
 ## Close the veil. Returns the Tween so the caller can await .finished.
+## Dismissal stays disarmed until arm() is called, so a click while the veil
+## is still closing is ignored instead of being emitted before anyone listens.
 func cover() -> Tween:
 	visible = true
 	_busy = false
+	_armed = false
 	var t := create_tween()
 	t.tween_method(_set_factor, _factor, 1.0, COVER_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	return t
 
 
+## Start listening for the dismiss click. Call this once the board has been
+## prepared (covered, fogged, rotated) and the hand-off is ready to reveal.
+func arm() -> void:
+	_armed = true
+
+
 ## Open the veil and hide it once it is fully clear.
 func reveal() -> Tween:
+	_armed = false
 	var t := create_tween()
 	t.tween_method(_set_factor, _factor, 0.0, REVEAL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	t.tween_callback(func(): visible = false)
@@ -52,7 +63,7 @@ func reveal() -> Tween:
 
 ## Idempotent: repeated clicks emit `dismissed` once and reveal once.
 func dismiss() -> void:
-	if _busy or not visible:
+	if _busy or not _armed or not visible:
 		return
 	_busy = true
 	dismissed.emit()

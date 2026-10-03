@@ -26,10 +26,15 @@ func _run() -> void:
 	_check(veil.mouse_filter == Control.MOUSE_FILTER_STOP, "veil blocks the board while up")
 	_check(not veil.is_covered(), "veil starts open")
 
-	await veil.cover().finished
-	_check(veil.is_covered(), "cover fully closes")
-	_check(veil.visible, "cover makes the veil visible")
+	var covering: Tween = veil.cover()
+	# A click before the cover finishes must be ignored: the hand-off is not
+	# listening yet, so an early dismiss would be lost and stall the turn.
+	await create_timer(0.15).timeout
+	veil.dismiss()
+	await covering.finished
+	_check(veil.is_covered(), "a click during the cover is ignored")
 
+	veil.arm()
 	var shots := [0]
 	veil.dismissed.connect(func(): shots[0] += 1)
 	veil.dismiss()

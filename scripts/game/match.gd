@@ -49,6 +49,7 @@ func _on_captured(victim: Node2D) -> void:
 
 func _on_game_win() -> void:
 	_game_over = true
+	Board.Locked = true
 
 
 func _on_move_settled() -> void:
@@ -60,11 +61,14 @@ func _on_move_settled() -> void:
 		await get_tree().process_frame
 	await Veil.cover().finished
 	_apply_fog()
-	_rotate_board()
-	Veil.set_prompt("BLACK TO MOVE — TAP" if Board.Turn == 1 else "WHITE TO MOVE — TAP")
 	var center := get_viewport_rect().size / 2.0
 	Board.get_node("Effects").shockwave(center, 0.018, WAKE_COLOR, 1.0)
 	Board._Shake(0.35)
+	# Rotate while covered, then arm the click: revealing during the spin (or
+	# before this point) is what the early-dismiss guard exists to prevent.
+	await _rotate_board().finished
+	Veil.set_prompt("BLACK TO MOVE — TAP" if Board.Turn == 1 else "WHITE TO MOVE — TAP")
+	Veil.arm()
 	await Veil.dismissed
 	Board.get_node("Effects").shockwave(center, 0.014, WAKE_COLOR, 1.0)
 	Board._Shake(0.25)
@@ -73,8 +77,9 @@ func _on_move_settled() -> void:
 
 ## Rotate the board about its own centre. Frame is centred on the same point, so
 ## it needs no rotation; the pivot is what keeps the board on top of itself.
-func _rotate_board() -> void:
+func _rotate_board() -> Tween:
 	Flow.pivot_offset = Flow.size / 2.0
 	var target := PI if absf(Flow.rotation) < PI / 2.0 else 0.0
 	var t := create_tween()
 	t.tween_property(Flow, "rotation", target, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	return t

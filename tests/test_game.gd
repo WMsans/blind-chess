@@ -64,6 +64,10 @@ func _run() -> void:
 	# Hand-off: cover, fog flip, rotate; dismiss reveals and keeps the rotation.
 	board.Turn = 1
 	game._on_move_settled()
+	# A tap while the veil is still closing must be ignored, not lost; a lost
+	# dismiss would strand the hand-off with _handoff stuck true.
+	await create_timer(0.2).timeout
+	veil.dismiss()
 	await create_timer(1.0).timeout
 	_check(veil.is_covered(), "hand-off covers the board")
 	_check(absf(flow.rotation - PI) < 0.01, "board rotated 180 degrees for black")
@@ -99,7 +103,7 @@ func _run() -> void:
 	await create_timer(0.3).timeout
 	_check(not veil.is_covered(), "hand-off waits for the promotion panel")
 	game.get_node("Board/Promotion").visible = false
-	await create_timer(0.6).timeout
+	await create_timer(1.0).timeout
 	_check(veil.is_covered(), "hand-off proceeds once promotion closes")
 	veil.dismiss()
 	await create_timer(0.6).timeout

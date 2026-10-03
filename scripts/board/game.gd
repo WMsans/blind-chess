@@ -42,6 +42,8 @@ var SelectedPiece: Node2D = null
 var Markers: Array[Control] = []
 # True while a move animation plays: board input is ignored until it settles.
 var Busy := false
+# Set once the match is over: the board freezes on the winning position.
+var Locked := false
 # If you don't have a good solution, do your promotions with another variable~
 var SavedNode = ""
 var Turn = 0
@@ -91,6 +93,9 @@ func _Shake(trauma: float) -> void:
 	Trauma = minf(Trauma + trauma, 1.0)
 
 func _on_flow_send_location(Location: String):
+	# A finished match accepts no more input.
+	if Locked:
+		return
 	# Don't update ANYTHING if you still need to promote!
 	if get_node("Promotion").visible == true:
 		return
@@ -651,7 +656,8 @@ func Castle():
 	while not IsNull(str(LocationXInt + CounterX) + "-" + LocationY) && Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child_count() == 0:
 		CounterX += 1
 	if not IsNull(str(LocationXInt + CounterX) + "-" + LocationY) && Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child(0).name == "Rook":
-		if Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child(0).Castling == true:
+		# Both landing squares must be free, or the king would share a cell.
+		if Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child(0).Castling == true && _Empty(str(LocationXInt + 1) + "-" + LocationY) && _Empty(str(LocationXInt + 2) + "-" + LocationY):
 			Areas.append(str(LocationXInt + CounterX) + "-" + LocationY)
 			SpecialArea.append(str(LocationXInt + 1) + "-" + LocationY)
 			SpecialArea.append(str(LocationXInt + 2) + "-" + LocationY)
@@ -660,7 +666,8 @@ func Castle():
 	while not IsNull(str(LocationXInt + CounterX) + "-" + LocationY) && Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child_count() == 0:
 		CounterX -= 1
 	if not IsNull(str(LocationXInt + CounterX) + "-" + LocationY) && Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child(0).name == "Rook":
-		if Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child(0).Castling == true:
+		# Both landing squares must be free, or the king would share a cell.
+		if Flow.get_node(str(LocationXInt + CounterX) + "-" + LocationY).get_child(0).Castling == true && _Empty(str(LocationXInt - 1) + "-" + LocationY) && _Empty(str(LocationXInt - 2) + "-" + LocationY):
 			Areas.append(str(LocationXInt + CounterX) + "-" + LocationY)
 			SpecialArea.append(str(LocationXInt - 1) + "-" + LocationY)
 			SpecialArea.append(str(LocationXInt - 2) + "-" + LocationY)
@@ -673,6 +680,12 @@ func IsNull(Location):
 		IsKing(Location)
 		return false
 
+# A cell that exists and holds nothing. Castling uses it to keep both landing
+# squares free, so a shuffled board can never drop two pieces into one cell.
+func _Empty(Location: String) -> bool:
+	var cell := Flow.get_node_or_null(Location)
+	return cell != null && cell.get_child_count() == 0
+
 # Checking for a king.
 func CheckKing(Children):
 	for i in Children:
@@ -681,7 +694,12 @@ func CheckKing(Children):
 			GetMovableAreas()
 
 # Helper function
+# Checking for a king. A covered king gets no tint: the red highlight would
+# bleed through the face-down tile and give away which hidden piece it is.
 func IsKing(Location):
 	var TheNode = Flow.get_node_or_null(Location)
 	if TheNode != null && TheNode.get_child_count() != 0 && TheNode.get_child(0).PieceColor != Turn && TheNode.get_child(0).name == "King":
-		TheNode.get_child(0).modulate = Color(1, 0, 0, 1)
+		var king = TheNode.get_child(0)
+		var cover = king.get_node_or_null("Cover")
+		if cover == null || cover.visible == false:
+			king.modulate = Color(1, 0, 0, 1)
