@@ -1,0 +1,98 @@
+[gd_scene format=3 uid="uid://c3hrms3ic5ed8"]
+
+[ext_resource type="Script" path="res://generator.gd" id="1_ckrtr"]
+[ext_resource type="Script" path="res://game.gd" id="1_f1l42"]
+[ext_resource type="PackedScene" path="res://ChessScenes/pawn.tscn" id="3_871tv"]
+[ext_resource type="PackedScene" path="res://ChessScenes/bishop.tscn" id="4_f2vpi"]
+[ext_resource type="PackedScene" path="res://ChessScenes/rook.tscn" id="5_lwy4i"]
+[ext_resource type="PackedScene" path="res://ChessScenes/knight.tscn" id="6_ta68t"]
+[ext_resource type="PackedScene" path="res://ChessScenes/queen.tscn" id="7_7creb"]
+[ext_resource type="PackedScene" path="res://ChessScenes/king.tscn" id="8_vvr6q"]
+[ext_resource type="Script" path="res://game_win.gd" id="9_ww6wk"]
+
+[node name="Board" type="Control" unique_id=1477992830]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+accessibility_name = "Root"
+accessibility_description = "The node that houses everything."
+script = ExtResource("1_f1l42")
+BoardPath = NodePath("Flow")
+
+[node name="Flow" type="FlowContainer" parent="." unique_id=981226937]
+layout_mode = 0
+accessibility_name = "Flow"
+accessibility_description = "The game board"
+script = ExtResource("1_ckrtr")
+Pawn = ExtResource("3_871tv")
+Bishop = ExtResource("4_f2vpi")
+Rook = ExtResource("5_lwy4i")
+Knight = ExtResource("6_ta68t")
+Queen = ExtResource("7_7creb")
+King = ExtResource("8_vvr6q")
+
+[node name="GameWin" type="Control" parent="." unique_id=641742928]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+accessibility_name = "Win"
+accessibility_description = "Node that houses a script."
+script = ExtResource("9_ww6wk")
+
+[node name="Promotion" type="Panel" parent="." unique_id=1048689665]
+visible = false
+layout_mode = 0
+offset_left = 531.0
+offset_top = 130.0
+offset_right = 731.0
+offset_bottom = 330.0
+accessibility_name = "Promotion"
+accessibility_description = "A panel that houses buttons for promoting."
+
+[node name="Rook" type="Button" parent="Promotion" unique_id=25504456]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 10.0
+offset_right = 55.0
+offset_bottom = 41.0
+accessibility_name = "Rook"
+accessibility_description = "Promote a pawn to a rook."
+text = "Rook"
+
+[node name="Bishop" type="Button" parent="Promotion" unique_id=2087664930]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 10.0
+offset_right = 115.0
+offset_bottom = 41.0
+accessibility_name = "Bishop"
+accessibility_description = "Promote a pawn to a bishop."
+text = "Bishop"
+
+[node name="Knight" type="Button" parent="Promotion" unique_id=837740207]
+layout_mode = 0
+offset_left = 9.0
+offset_top = 50.0
+offset_right = 56.0
+offset_bottom = 81.0
+accessibility_name = "Knight"
+accessibility_description = "Promote a pawn to a knight."
+text = "Knight"
+
+[node name="Queen" type="Button" parent="Promotion" unique_id=1400330995]
+layout_mode = 0
+offset_left = 79.0
+offset_top = 52.0
+offset_right = 140.0
+offset_bottom = 83.0
+accessibility_name = "Queen"
+accessibility_description = "Promote a pawn to a queen."
+text = "Queen"
+
+[connection signal="GameWin" from="." to="GameWin" method="_on_board_game_win"]
+[connection signal="SendLocation" from="Flow" to="." method="_on_flow_send_location"]
+[connection signal="pressed" from="Promotion/Rook" to="." method="FinalizePromotion" binds= ["Rook"]]
+[connection signal="pressed" from="Promotion/Bishop" to="." method="FinalizePromotion" binds= ["Bishop"]]
+[connection signal="pressed" from="Promotion/Knight" to="." method="FinalizePromotion" binds= ["Knight"]]
+[connection signal="pressed" from="Promotion/Queen" to="." method="FinalizePromotion" binds= ["Queen"]]
