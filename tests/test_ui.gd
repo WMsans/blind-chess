@@ -26,6 +26,7 @@ func _run() -> void:
 	await _test_animated_button()
 	await _test_setting_row()
 	await _test_promotion()
+	await _test_menu()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -116,3 +117,28 @@ func _test_promotion() -> void:
 	await p.closed
 	_check(not p.visible, "closes after the exit")
 	p.queue_free()
+
+func _test_menu() -> void:
+	print("menu")
+	var menu: Control = load("res://scenes/menu.tscn").instantiate()
+	root.add_child(menu)
+	await process_frame
+	_check(menu.get_script().get_script_constant_map()["PLAY_SCENE"] == "res://scenes/game.tscn", "Play targets the match scene")
+	var buttons := menu.get_node("Buttons").get_children()
+	_check(buttons.size() == 3, "three menu buttons")
+	for b in buttons:
+		_check(b is Button and not (b is Sprite2D), "menu items are Controls")
+		_check(b.get_global_rect().end.y <= 648.0, "button inside the viewport")
+	# Re-entering the panel mid-flight must not strand a control.
+	var panel: Control = menu.get_node("SettingsPanel")
+	panel.open()
+	panel.close()
+	panel.open()
+	await create_timer(0.8).timeout
+	for row in panel.get_node("Rows").get_children():
+		if row is Button:
+			_check(is_equal_approx(row.modulate.a, 1.0), "re-opened row is fully opaque")
+	panel.set_value("Master Volume", 42)
+	menu.push_data_to_manager()
+	_check(root.get_node("Savemanager").get_setting("Master Volume") == 42, "window close persists live values")
+	menu.queue_free()

@@ -49,6 +49,7 @@ func _ready():
 			temp.set_name(str(NumberX) + "-" + str(NumberY))
 			temp.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			_StyleCell(temp, (NumberX + NumberY) % 2 == 0)
+			temp.focus_mode = Control.FOCUS_NONE
 			add_child(temp)
 			NumberX += 1
 		NumberY += 1
