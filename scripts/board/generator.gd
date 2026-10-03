@@ -8,6 +8,11 @@ extends FlowContainer
 
 @export var PlayRegularGame: bool = true
 
+# When true the opening is dealt from a shuffled army instead of the regular
+# setup. Kept off by default so the existing board tests keep the standard
+# layout; the game scene overrides it on the Flow node.
+@export var Randomize: bool = false
+
 # Board look
 const LIGHT_SQUARE := Color("#ebecd0")
 const DARK_SQUARE := Color("#779556")
@@ -50,7 +55,9 @@ func _ready():
 		NumberX = 0
 	_Center()
 	get_viewport().size_changed.connect(_Center)
-	if PlayRegularGame == true:
+	if Randomize:
+		RandomGame()
+	elif PlayRegularGame == true:
 		RegularGame()
 
 
@@ -136,3 +143,34 @@ func Summon(Scene: PackedScene, color: int):
 	# This is the point, ignore the warning
 	Piece.position = Vector2(TileXSize / 2, TileYSize / 2)
 	return Piece
+
+
+# Deal a full army across a colour's two home ranks. Each side draws its own
+# shuffle, so the two layouts are independent.
+func RandomGame():
+	var army: Array[PackedScene] = []
+	for i in 8:
+		army.append(Pawn)
+	army.append(Rook)
+	army.append(Rook)
+	army.append(Knight)
+	army.append(Knight)
+	army.append(Bishop)
+	army.append(Bishop)
+	army.append(Queen)
+	army.append(King)
+
+	var black := army.duplicate()
+	black.shuffle()
+	_Deal(black, 1, 0, 1)
+
+	var white := army.duplicate()
+	white.shuffle()
+	_Deal(white, 0, 7, 6)
+
+
+func _Deal(pieces: Array, color: int, back_rank: int, front_rank: int):
+	for i in pieces.size():
+		var rank: int = back_rank if i < BoardXSize else front_rank
+		var file: int = i % BoardXSize
+		get_node(str(file) + "-" + str(rank)).add_child(Summon(pieces[i], color))
