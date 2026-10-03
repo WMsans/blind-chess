@@ -67,6 +67,9 @@ func _on_move_settled() -> void:
 	# Rotate while covered, then arm the click: revealing during the spin (or
 	# before this point) is what the early-dismiss guard exists to prevent.
 	await _rotate_board().finished
+	# The last-move overlay lives in the un-rotated FX layer, so line it back up
+	# with the spun cells before anyone can see it.
+	Board.DrawLastMove()
 	Veil.set_prompt("BLACK TO MOVE — TAP" if Board.Turn == 1 else "WHITE TO MOVE — TAP")
 	Veil.arm()
 	await Veil.dismissed

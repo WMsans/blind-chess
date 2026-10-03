@@ -18,6 +18,12 @@ const MARKER_DOT := Color(0.13, 0.18, 0.13, 0.32)
 const MARKER_RING := Color(0.13, 0.18, 0.13, 0.55)
 const DENY_COLOR := Color(0.95, 0.28, 0.28, 0.9)
 
+# Last-move overlays: a plain wash on the square a piece left, a stronger wash
+# ringed at the edge on the square it landed on.
+const ORIGIN_TINT := Color("#ffd76a4d")
+const DEST_TINT := Color("#ffd76a73")
+const DEST_RING := Color("#ffd76af2")
+
 # Shockwave push, in screen-UV units. Bigger number = harder warp.
 const WAVE_SELECT := 0.006
 const WAVE_LAUNCH := 0.014
@@ -40,6 +46,11 @@ var SelectedNode = ""
 var SelectedPiece: Node2D = null
 # Move markers live in FX so board cells only ever hold a single piece.
 var Markers: Array[Control] = []
+# The opponent's last move, as cell names (arrays: castling moves two pieces)
+# and the overlays currently showing it.
+var LastMoveFrom := PackedStringArray()
+var LastMoveTo := PackedStringArray()
+var LastMoveMarks: Array[Control] = []
 # True while a move animation plays: board input is ignored until it settles.
 var Busy := false
 # Set once the match is over: the board freezes on the winning position.
@@ -254,6 +265,47 @@ func _ClearMarkers():
 	Markers.clear()
 
 
+# --- Last-move indicator -------------------------------------------------------
+# The opponent's move is the only thing a blind player has to reason from, so
+# mark where it came from and where it landed until the next move replaces it.
+
+func _MarkLastMove(from: Array, to: Array) -> void:
+	LastMoveFrom = PackedStringArray(from)
+	LastMoveTo = PackedStringArray(to)
+	DrawLastMove()
+
+## Rebuild the overlays from the cells' current positions. The hand-off spins
+## Flow while the overlays live in the un-rotated FX layer, so this has to run
+## again once that spin has settled.
+func DrawLastMove() -> void:
+	for mark in LastMoveMarks:
+		if is_instance_valid(mark):
+			mark.queue_free()
+	LastMoveMarks.clear()
+	for loc in LastMoveFrom:
+		_AddLastMoveMark(loc, ORIGIN_TINT, false)
+	for loc in LastMoveTo:
+		_AddLastMoveMark(loc, DEST_TINT, true)
+
+func _AddLastMoveMark(loc: String, color: Color, ring: bool) -> void:
+	var cell := Flow.get_node_or_null(loc)
+	if cell == null:
+		return
+	var mark := Panel.new()
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mark.size = Vector2(Flow.TileXSize, Flow.TileYSize)
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.set_corner_radius_all(8)
+	if ring:
+		box.set_border_width_all(3)
+		box.border_color = DEST_RING
+	mark.add_theme_stylebox_override("panel", box)
+	FX.add_child(mark)
+	mark.global_position = _CellCenter(cell) - mark.size / 2.0
+	LastMoveMarks.append(mark)
+
+
 # --- Move execution ------------------------------------------------------------
 # Every move hops through FX and only lands in its cell as the impact beat
 # starts, so UpdateGame always sees the destination in its final state.
@@ -261,6 +313,7 @@ func _ClearMarkers():
 func _DoMove(cell: Control):
 	var piece = Flow.get_node(SelectedNode).get_child(0)
 	SavedNode = str(cell.name)
+	_MarkLastMove([SelectedNode], [str(cell.name)])
 	_ReleaseSelection(piece)
 	_Commit(piece, cell)
 
@@ -271,6 +324,7 @@ func _DoCapture(cell: Control):
 	if victim.name == "King":
 		GameWin.emit()
 	SavedNode = str(cell.name)
+	_MarkLastMove([SelectedNode], [str(cell.name)])
 	_ReleaseSelection(piece)
 	_Commit(piece, cell, victim)
 
@@ -280,6 +334,7 @@ func _DoCastle(rook_cell: Control):
 	var rook = rook_cell.get_child(0)
 	var king_target := Flow.get_node(SpecialArea[1])
 	var rook_target := Flow.get_node(SpecialArea[0])
+	_MarkLastMove([SelectedNode, str(rook_cell.name)], [str(king_target.name), str(rook_target.name)])
 	_ReleaseSelection(king)
 	_CommitPair(king, king_target, rook, rook_target)
 
@@ -289,6 +344,7 @@ func _DoEnPassant(victim_cell: Control):
 	var victim = victim_cell.get_child(0)
 	var target := Flow.get_node(SpecialArea[1])
 	SavedNode = str(target.name)
+	_MarkLastMove([SelectedNode], [str(target.name)])
 	_ReleaseSelection(pawn)
 	_Commit(pawn, target, victim)
 
