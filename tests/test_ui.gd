@@ -25,6 +25,7 @@ func _run() -> void:
 	await _test_ui_motion()
 	await _test_animated_button()
 	await _test_setting_row()
+	await _test_promotion()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -94,3 +95,24 @@ func _test_setting_row() -> void:
 	row._step(1)
 	_check(row.value == 51 and seen.has(51), "steps and emits changed")
 	row.queue_free()
+
+func _test_promotion() -> void:
+	print("promotion")
+	var p: Control = load("res://scenes/promotion.tscn").instantiate()
+	root.add_child(p)
+	await process_frame
+	p.open(0)
+	_check(p.visible, "open shows the picker immediately")
+	_check(p.get_node("Panel").get_child_count() == 4, "four choices")
+	var picked := []
+	var closed := [false]
+	p.chosen.connect(func(n): picked.append(n))
+	p.closed.connect(func(): closed[0] = true)
+	p.get_node("Panel/Queen").pressed.emit()
+	_check(picked == ["Queen"], "chosen fires once")
+	p.get_node("Panel/Rook").pressed.emit()
+	_check(picked == ["Queen"], "a second choice is ignored")
+	p.close()
+	await p.closed
+	_check(not p.visible, "closes after the exit")
+	p.queue_free()
