@@ -24,6 +24,10 @@ const SQUASH_LAUNCH := Vector2(0.9, 1.14)
 const SQUASH_DESCEND := Vector2(1.08, 0.92)
 const IMPACT_SQUASH := Vector2(1.4, 0.64)
 
+# A captured piece landing in a tray: pop in oversized, then settle.
+const TRAY_POP := Vector2(1.35, 1.35)
+const TRAY_LIFT := 4.0
+
 const REJECT_COLOR := Color(1.0, 0.35, 0.35)
 const REJECT_TILT := 0.2
 
@@ -309,4 +313,32 @@ static func tap(cell: Control) -> Tween:
 	var t := _track(cell, cell.create_tween())
 	t.tween_property(cell, "scale", Vector2(0.94, 0.94), 0.05)
 	t.tween_property(cell, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	return t
+
+
+## A capture thumbnail arriving in its tray: pop in oversized with a small
+## rotation snap, then settle to rest.
+static func tray_in(item: Control) -> Tween:
+	_kill(item)
+	_settle_rest(item)
+	item.pivot_offset = item.custom_minimum_size / 2.0
+	item.scale = Vector2.ZERO
+	item.rotation = 0.2
+	var t := _track(item, item.create_tween())
+	t.set_parallel(true)
+	t.tween_property(item, "scale", TRAY_POP, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(item, "rotation", 0.0, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.chain().tween_property(item, "scale", Vector2.ONE, 0.12)
+	return t
+
+
+## Cursor over a capture thumbnail: lift and grow, like a card in hand.
+static func tray_hover(item: Control, entered: bool) -> Tween:
+	_kill(item)
+	var home := _home(item)
+	var target := home - Vector2(0, TRAY_LIFT) if entered else home
+	var t := _track(item, item.create_tween())
+	t.set_parallel(true)
+	t.tween_property(item, "position", target, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	t.tween_property(item, "scale", HOVER_SCALE if entered else Vector2.ONE, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	return t
