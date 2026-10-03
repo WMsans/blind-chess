@@ -24,6 +24,7 @@ func _run() -> void:
 	await _test_theme()
 	await _test_ui_motion()
 	await _test_animated_button()
+	await _test_setting_row()
 	print("RESULT: %d failure(s)" % _fails)
 	quit(1 if _fails > 0 else 0)
 
@@ -70,3 +71,26 @@ func _test_animated_button() -> void:
 	_check(released[0], "hold_released fires on release")
 	_check(not b.is_holding(), "hold state is off")
 	b.queue_free()
+
+func _test_setting_row() -> void:
+	print("setting_row")
+	var row = preload("res://scripts/ui/setting_row.gd").new()
+	row.setting_name = "Master Volume"
+	row.label_text = "Master Volume"
+	row.min_value = 0
+	row.max_value = 100
+	row.size = Vector2(600, 56)
+	root.add_child(row)
+	await process_frame
+	var seen := []
+	row.changed.connect(func(v): seen.append(v))
+	row.set_value(100)
+	row._step(1)
+	_check(row.value == 100, "clamps at max")
+	row.set_value(0)
+	row._step(-1)
+	_check(row.value == 0, "clamps at min")
+	row.set_value(50)
+	row._step(1)
+	_check(row.value == 51 and seen.has(51), "steps and emits changed")
+	row.queue_free()
