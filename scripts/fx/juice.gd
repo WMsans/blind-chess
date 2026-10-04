@@ -283,8 +283,8 @@ static func pop_out(piece: Node2D) -> Tween:
 	return t
 
 
-## A promoted piece landing on the board with a pop.
-static func spawn(piece: Node2D) -> Tween:
+## A promoted piece landing on the board with a pop. Works on any CanvasItem.
+static func spawn(piece: CanvasItem) -> Tween:
 	_kill(piece)
 	piece.scale = Vector2.ZERO
 	var t := _track(piece, piece.create_tween())

@@ -34,6 +34,22 @@ func _run() -> void:
 	_check(not Fog.is_hidden(piece), "show reveals the piece")
 	_check(piece.texture != null, "show keeps the real texture")
 
+	# Guessing paints the believed piece onto the cover and keeps a "?" on it.
+	Fog.hide(piece)
+	Fog.set_guess(piece, "Knight")
+	var icon := cover.get_node("Icon") as TextureRect
+	var mark := cover.get_node("Mark") as Label
+	_check(Fog.get_guess(piece) == "Knight", "guess is stored on the piece")
+	_check(icon.visible and icon.texture != null, "guess shows the piece icon")
+	_check(mark.text == "?", "the question mark stays on a guess")
+	# hide() must repaint from the meta so a turn hand-off keeps the guess.
+	Fog.show(piece)
+	Fog.hide(piece)
+	_check(icon.visible, "guess survives a fog re-apply")
+	Fog.set_guess(piece, "")
+	_check(Fog.get_guess(piece) == "" and not icon.visible, "clearing the guess hides the icon")
+	_check(piece.texture != null, "the real piece texture is untouched")
+
 	piece.queue_free()
 	await process_frame
 	print("RESULT: %d failure(s)" % _fails)
