@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://bombmbttl3o7n" path="res://scripts/board/game_win.gd" id="9_ww6wk"]
 [ext_resource type="Script" uid="uid://be52gqnqmul8x" path="res://scripts/fx/effects.gd" id="10_fx"]
 [ext_resource type="PackedScene" path="res://scenes/promotion.tscn" id="11_promo"]
+[ext_resource type="PackedScene" path="res://scenes/guess.tscn" id="12_guess"]
 
 [node name="Board" type="Control" unique_id=294561725]
 layout_mode = 3
@@ -54,6 +55,9 @@ accessibility_description = "Node that houses a script."
 script = ExtResource("9_ww6wk")
 
 [node name="Promotion" parent="." unique_id=582240007 instance=ExtResource("11_promo")]
+anchors_preset = 0
+
+[node name="Guess" parent="." unique_id=918273645 instance=ExtResource("12_guess")]
 anchors_preset = 0
 
 [connection signal="GameWin" from="." to="GameWin" method="_on_board_game_win"]

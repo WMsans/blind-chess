@@ -7,6 +7,7 @@ signal Captured(victim: Node2D)
 signal MoveSettled
 
 const Juice = preload("res://scripts/fx/juice.gd")
+const Fog = preload("res://scripts/fx/fog.gd")
 const PROMOTION_SCENES := {
 	"Bishop": preload("res://scenes/pieces/bishop.tscn"),
 	"Queen": preload("res://scenes/pieces/queen.tscn"),
@@ -57,6 +58,8 @@ var Busy := false
 var Locked := false
 # If you don't have a good solution, do your promotions with another variable~
 var SavedNode = ""
+# The cell whose hidden piece the guess picker is currently open for.
+var GuessNode = ""
 var Turn = 0
 
 # Location on which node was clicked.
@@ -71,6 +74,7 @@ var LocationYInt: int
 @onready var Flow = get_node(BoardPath)
 @onready var FX: Node2D = get_node("FX")
 @onready var Effects: Node2D = get_node("Effects")
+@onready var Guess: Control = get_node("Guess")
 
 @onready var pos: Vector2 = Vector2(Flow.TileXSize / 2, Flow.TileYSize / 2)
 # Areas where the player can move
@@ -86,6 +90,7 @@ var _ShakeClock := 0.0
 
 func _ready():
 	get_node("Promotion").chosen.connect(FinalizePromotion)
+	Guess.chosen.connect(_on_guess_chosen)
 
 
 func _process(delta: float) -> void:
@@ -109,6 +114,9 @@ func _on_flow_send_location(Location: String):
 		return
 	# Don't update ANYTHING if you still need to promote!
 	if get_node("Promotion").visible == true:
+		return
+	# Nor while the guess picker is open; its dim already swallows the tap.
+	if Guess.visible:
 		return
 	# Nothing gets through while a piece is still in the air.
 	if Busy:
@@ -135,6 +143,8 @@ func _on_flow_send_location(Location: String):
 	if SelectedNode == "":
 		if mine:
 			_Select(Location, cell)
+		elif occupied && Fog.is_hidden(cell.get_child(0)):
+			_OpenGuess(Location, cell)
 		else:
 			_Reject(cell)
 		return
@@ -208,6 +218,38 @@ func _Reject(cell: Control):
 	if is_instance_valid(SelectedPiece):
 		Juice.reject(SelectedPiece)
 	Juice.flash_out(_MakeMarker(cell, false, DENY_COLOR))
+
+
+# --- Guessing a hidden piece ---------------------------------------------------
+# Cosmetic only. Tapping a covered enemy piece with nothing selected opens the
+# radial picker; a legal capture (which needs a piece selected first) always
+# takes precedence, so this never eats a move.
+
+func _OpenGuess(Location: String, cell: Control):
+	GuessNode = Location
+	var piece: Node2D = cell.get_child(0)
+	Juice.tap(cell)
+	Effects.shockwave(_CellCenter(cell), WAVE_SELECT, WAVE_LAUNCH_COLOR, 0.35)
+	_Shake(0.1)
+	Guess.open(_CellCenter(cell), piece.PieceColor, Fog.get_guess(piece))
+
+
+func _on_guess_chosen(name: String):
+	var cell := Flow.get_node_or_null(GuessNode)
+	GuessNode = ""
+	if cell != null && cell.get_child_count() != 0:
+		var piece: Node2D = cell.get_child(0)
+		# Re-picking the same type clears the guess back to a plain cover.
+		Fog.set_guess(piece, "" if Fog.get_guess(piece) == name else name)
+		var cover := piece.get_node_or_null("Cover") as Control
+		if cover != null:
+			cover.pivot_offset = cover.size / 2.0
+			Juice.spawn(cover)
+		var center := _CellCenter(cell)
+		Effects.burst(center, SPARK, 10, 240.0)
+		Effects.shockwave(center, WAVE_SELECT, WAVE_LAUNCH_COLOR, 0.5)
+		_Shake(0.25)
+	Guess.close()
 
 
 func _CellCenter(cell: Control) -> Vector2:
