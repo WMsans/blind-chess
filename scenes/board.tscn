@@ -34,6 +34,7 @@ layout_mode = 0
 accessibility_name = "Flow"
 accessibility_description = "The game board"
 script = ExtResource("1_ckrtr")
+Randomize = true
 Pawn = ExtResource("3_871tv")
 Bishop = ExtResource("4_f2vpi")
 Rook = ExtResource("5_lwy4i")
@@ -58,7 +59,6 @@ script = ExtResource("9_ww6wk")
 anchors_preset = 0
 
 [node name="Guess" parent="." unique_id=918273645 instance=ExtResource("12_guess")]
-anchors_preset = 0
 
 [connection signal="GameWin" from="." to="GameWin" method="_on_board_game_win"]
 [connection signal="HoverLocation" from="Flow" to="." method="_on_flow_hover"]
