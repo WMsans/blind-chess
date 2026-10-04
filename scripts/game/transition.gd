@@ -12,8 +12,8 @@ extends Control
 signal dismissed
 
 const SHADER := preload("res://assets/shaders/circle_wipe.gdshader")
-const COVER_TIME := 1.8
-const REVEAL_TIME := 1.8
+const COVER_TIME := 1.0
+const REVEAL_TIME := 1.0
 ## Field width in texels; height follows the viewport aspect so baked circles
 ## stay round on any window shape.
 const FIELD_WIDTH := 256
@@ -45,6 +45,9 @@ func _ready() -> void:
 	_mat.set_shader_parameter("field_texture", _field())
 	_mat.set_shader_parameter("factor", _factor)
 	Black.material = _mat
+	# The prompt rides only on a fully closed veil; anything else floats it over
+	# the uncovered board while the circles are still growing in.
+	Prompt.visible = false
 	# A resize re-stretches the field, so rebuild it to keep the circles round.
 	get_viewport().size_changed.connect(_rebuild_field)
 	if start_covered:
@@ -61,8 +64,9 @@ func cover() -> Tween:
 	visible = true
 	_busy = false
 	_armed = false
+	Prompt.visible = false
 	var t := create_tween()
-	t.tween_method(_set_factor, _factor, 1.0, COVER_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_method(_set_factor, _factor, 1.0, COVER_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	return t
 
 
@@ -75,6 +79,7 @@ func arm() -> void:
 ## Open the veil and hide it once it is fully clear.
 func reveal() -> Tween:
 	_armed = false
+	Prompt.visible = false
 	var t := create_tween()
 	t.tween_method(_set_factor, _factor, 0.0, REVEAL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	t.tween_callback(func(): visible = false)
@@ -95,8 +100,11 @@ func is_covered() -> bool:
 	return visible and _factor > 0.5
 
 
+## Show the prompt. Called once the veil is closed and the new turn's text is
+## ready, so the previous turn's text never flashes on top of the fresh veil.
 func set_prompt(text: String) -> void:
 	Prompt.text = text
+	Prompt.visible = true
 
 
 func _set_factor(value: float) -> void:

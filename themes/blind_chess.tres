@@ -1,18 +1,30 @@
-[gd_resource type="Theme" load_steps=8 format=3]
+[gd_resource type="Theme" format=3 uid="uid://clyvd3a3h3suc"]
 
-[ext_resource type="FontFile" path="res://assets/fonts/MedievalSharp-Regular.ttf" id="1_font"]
+[ext_resource type="FontFile" uid="uid://c6erp2x18btsd" path="res://assets/fonts/MedievalSharp-Regular.ttf" id="1_font"]
 
-[sub_resource type="StyleBoxFlat" id="SB_normal"]
+[sub_resource type="StyleBoxFlat" id="SB_disabled"]
 content_margin_left = 18.0
 content_margin_top = 10.0
 content_margin_right = 18.0
 content_margin_bottom = 10.0
-bg_color = Color(0.180392, 0.215686, 0.152941, 1)
+bg_color = Color(0.109804, 0.129412, 0.090196, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.419608, 0.478431, 0.345098, 1)
+border_color = Color(0.309804, 0.364706, 0.266667, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="SB_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.843137, 0.415686, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -34,6 +46,22 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="SB_normal"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.180392, 0.215686, 0.152941, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.419608, 0.478431, 0.345098, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="SB_pressed"]
 content_margin_left = 18.0
 content_margin_top = 10.0
@@ -45,34 +73,6 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 0.843137, 0.415686, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="SB_focus"]
-bg_color = Color(0, 0, 0, 0)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.843137, 0.415686, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="SB_disabled"]
-content_margin_left = 18.0
-content_margin_top = 10.0
-content_margin_right = 18.0
-content_margin_bottom = 10.0
-bg_color = Color(0.109804, 0.129412, 0.090196, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.309804, 0.364706, 0.266667, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -98,15 +98,15 @@ corner_radius_bottom_left = 12
 default_font = ExtResource("1_font")
 default_font_size = 32
 Button/colors/font_color = Color(0.941176, 0.94902, 0.901961, 1)
+Button/colors/font_disabled_color = Color(0.788235, 0.823529, 0.721569, 1)
+Button/colors/font_focus_color = Color(1, 0.843137, 0.415686, 1)
 Button/colors/font_hover_color = Color(1, 0.843137, 0.415686, 1)
 Button/colors/font_pressed_color = Color(0.941176, 0.94902, 0.901961, 1)
-Button/colors/font_focus_color = Color(1, 0.843137, 0.415686, 1)
-Button/colors/font_disabled_color = Color(0.788235, 0.823529, 0.721569, 1)
-Button/styles/normal = SubResource("SB_normal")
-Button/styles/hover = SubResource("SB_hover")
-Button/styles/pressed = SubResource("SB_pressed")
-Button/styles/focus = SubResource("SB_focus")
 Button/styles/disabled = SubResource("SB_disabled")
-Panel/styles/panel = SubResource("SB_panel")
+Button/styles/focus = SubResource("SB_focus")
+Button/styles/hover = SubResource("SB_hover")
+Button/styles/normal = SubResource("SB_normal")
+Button/styles/pressed = SubResource("SB_pressed")
 Label/colors/font_color = Color(0.941176, 0.94902, 0.901961, 1)
+Panel/styles/panel = SubResource("SB_panel")
 RichTextLabel/colors/default_color = Color(0.788235, 0.823529, 0.721569, 1)

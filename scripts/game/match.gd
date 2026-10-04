@@ -64,9 +64,9 @@ func _on_move_settled() -> void:
 	var center := get_viewport_rect().size / 2.0
 	Board.get_node("Effects").shockwave(center, 0.018, WAKE_COLOR, 1.0)
 	Board._Shake(0.35)
-	# Rotate while covered, then arm the click: revealing during the spin (or
-	# before this point) is what the early-dismiss guard exists to prevent.
-	await _rotate_board().finished
+	# The veil is fully opaque here, so snapping the turn is silent; animating it
+	# would only hold a blank black screen before the prompt appears.
+	_rotate_board()
 	# The last-move overlay lives in the un-rotated FX layer, so line it back up
 	# with the spun cells before anyone can see it.
 	Board.DrawLastMove()
@@ -82,13 +82,11 @@ func _on_move_settled() -> void:
 ## it needs no rotation; the pivot is what keeps the board on top of itself.
 ## Each square counter-rotates the same amount so the pieces inside it stay
 ## upright while the layout turns; a square is symmetric, so its own spin is
-## invisible. The veil is still closed here, so the mismatch mid-tween never shows.
-func _rotate_board() -> Tween:
+## invisible. The veil is fully closed here, so the turn is never seen.
+func _rotate_board() -> void:
 	Flow.pivot_offset = Flow.size / 2.0
 	var target := PI if absf(Flow.rotation) < PI / 2.0 else 0.0
 	for cell in Flow.get_children():
 		cell.pivot_offset = cell.size / 2.0
 		cell.rotation = -target
-	var t := create_tween()
-	t.tween_property(Flow, "rotation", target, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	return t
+	Flow.rotation = target
