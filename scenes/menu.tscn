@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3 uid="uid://frlgcxc465gs"]
+[gd_scene load_steps=8 format=3 uid="uid://frlgcxc465gs"]
 
 [ext_resource type="Shader" path="res://assets/shaders/menu_background.gdshader" id="1_bg"]
 [ext_resource type="Script" path="res://scripts/ui/menu.gd" id="2_menu"]
 [ext_resource type="Script" path="res://scripts/ui/animated_button.gd" id="3_btn"]
 [ext_resource type="Script" path="res://scripts/ui/setting_row.gd" id="4_row"]
 [ext_resource type="Script" path="res://scripts/ui/settings_menu.gd" id="5_settings"]
+[ext_resource type="PackedScene" path="res://scenes/transition.tscn" id="6_transition"]
 
 [sub_resource type="ShaderMaterial" id="SM_bg"]
 shader = ExtResource("1_bg")
@@ -178,3 +179,5 @@ offset_bottom = 294.0
 accessibility_name = "Back"
 text = "BACK"
 script = ExtResource("3_btn")
+
+[node name="TurnTransition" parent="." instance=ExtResource("6_transition")]
