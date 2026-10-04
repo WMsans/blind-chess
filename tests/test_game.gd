@@ -28,6 +28,7 @@ func _run() -> void:
 	var board: Control = game.get_node("Board")
 	var flow: Control = board.get_node("Flow")
 	var veil: Control = game.get_node("TurnTransition/Veil")
+	_check(not veil.is_covered(), "a directly launched game opens uncovered")
 
 	# The scene must deal a shuffled opening, not the regular one; a broken
 	# node override would silently ship standard chess under the fog.
@@ -68,7 +69,8 @@ func _run() -> void:
 	# dismiss would strand the hand-off with _handoff stuck true.
 	await create_timer(0.2).timeout
 	veil.dismiss()
-	await create_timer(1.0).timeout
+	# Cover plus the board spin; the veil arms only after both land.
+	await create_timer(2.5).timeout
 	_check(veil.is_covered(), "hand-off covers the board")
 	_check(absf(flow.rotation - PI) < 0.01, "board rotated 180 degrees for black")
 	# The rotation must not tip the pieces over with the board: every piece is
@@ -88,17 +90,17 @@ func _run() -> void:
 			white_now_hidden += 1
 	_check(white_now_hidden == 16, "hand-off hides white")
 	veil.dismiss()
-	await create_timer(0.6).timeout
+	await create_timer(2.0).timeout
 	_check(not veil.is_covered(), "dismiss reveals the board")
 	_check(absf(flow.rotation - PI) < 0.01, "rotation survives the reveal")
 
 	# Second hand-off rotates back.
 	board.Turn = 0
 	game._on_move_settled()
-	await create_timer(1.0).timeout
+	await create_timer(2.5).timeout
 	_check(absf(flow.rotation) < 0.01, "second hand-off rotates back")
 	veil.dismiss()
-	await create_timer(0.6).timeout
+	await create_timer(2.0).timeout
 
 	# Empty cells are skipped by the fog pass.
 	var empty_cell := flow.get_node("0-0")
@@ -114,10 +116,10 @@ func _run() -> void:
 	await create_timer(0.3).timeout
 	_check(not veil.is_covered(), "hand-off waits for the promotion panel")
 	game.get_node("Board/Promotion").visible = false
-	await create_timer(1.0).timeout
+	await create_timer(2.5).timeout
 	_check(veil.is_covered(), "hand-off proceeds once promotion closes")
 	veil.dismiss()
-	await create_timer(0.6).timeout
+	await create_timer(2.0).timeout
 
 	# A finished game never covers the winning move.
 	game._on_game_win()

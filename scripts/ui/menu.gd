@@ -6,6 +6,7 @@ extends Control
 ## `saveable_scenes` group contract when the window closes.
 
 const UiMotion = preload("res://scripts/ui/ui_motion.gd")
+const Transition = preload("res://scripts/game/transition.gd")
 
 const PLAY_SCENE := "res://scenes/game.tscn"
 
@@ -13,6 +14,7 @@ const PLAY_SCENE := "res://scenes/game.tscn"
 @onready var Title: Label = get_node("Title")
 @onready var Buttons: Control = get_node("Buttons")
 @onready var SettingsPanel = get_node("SettingsPanel")
+@onready var Veil: Control = get_node("TurnTransition/Veil")
 
 var _leaving := false
 var _save: Node
@@ -109,9 +111,15 @@ func _on_play() -> void:
 	_leaving = true
 	_dismiss_buttons()
 	UiMotion.dismiss(Title, Vector2(0, 40), 0.0)
-	await get_tree().create_timer(0.4).timeout
+	await Veil.cover().finished
+	# The game's own veil starts closed and reveals itself, so the swap never
+	# flashes a bare board; the flag tells that veil we are arriving.
+	Transition.start_covered = true
 	var err := get_tree().change_scene_to_file(PLAY_SCENE)
 	if err != OK:
+		Transition.start_covered = false
+		Veil.reveal()
+		_leaving = false
 		push_error("Failed to load %s (error %d)" % [PLAY_SCENE, err])
 
 
