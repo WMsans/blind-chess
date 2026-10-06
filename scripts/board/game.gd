@@ -153,9 +153,7 @@ func _on_flow_send_location(Location: String):
 	if not mine && occupied && SpecialArea.size() == 2 && SpecialArea[0] == cell.name:
 		en_passant_target = cell.get_child(0).name == "Pawn" && cell.get_child(0).EnPassant == true
 
-	if mine && cell.get_child(0).name == "Rook" && Areas.has(cell.name):
-		_DoCastle(cell)
-	elif en_passant_target:
+	if en_passant_target:
 		_DoEnPassant(cell)
 	elif mine:
 		_Select(Location, cell)
@@ -369,16 +367,6 @@ func _DoCapture(cell: Control):
 	_MarkLastMove([SelectedNode], [str(cell.name)])
 	_ReleaseSelection(piece)
 	_Commit(piece, cell, victim)
-
-
-func _DoCastle(rook_cell: Control):
-	var king = Flow.get_node(SelectedNode).get_child(0)
-	var rook = rook_cell.get_child(0)
-	var king_target := Flow.get_node(SpecialArea[1])
-	var rook_target := Flow.get_node(SpecialArea[0])
-	_MarkLastMove([SelectedNode, str(rook_cell.name)], [str(king_target.name), str(rook_target.name)])
-	_ReleaseSelection(king)
-	_CommitPair(king, king_target, rook, rook_target)
 
 
 func _DoEnPassant(victim_cell: Control):
